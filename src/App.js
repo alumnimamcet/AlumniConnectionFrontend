@@ -26,10 +26,16 @@ import Messaging from './pages/Home/Messaging';
 // --- அட்மின் பேஜஸ் இம்போர்ட் ---
 import AdminHome from './pages/Admin/AdminHome';
 import AdminPost from './pages/Admin/AdminPost';
-// இங்க பாருங்க ஷாலினி, இந்த இம்போர்ட் ரொம்ப முக்கியம்!
 import UpcomingEventsList from './pages/Admin/UpcomingEventsList'; 
 import JobVacancyList from './pages/Admin/JobVacancyList';
-import CreateJob from './pages/Admin/CreateJob'
+import CreateJob from './pages/Admin/CreateJob';
+import ViewProfile from './pages/Admin/ViewProfile';
+import AdminDashboard from './pages/Admin/AdminDashboard'; // டேஷ்போர்டு இம்போர்ட்
+
+// --- அலுமினி மேனேஜ்மென்ட் இம்போர்ட் ---
+import AlumniManagement from './pages/Admin/AlumniManagement';
+import ReviewApplication from './pages/Admin/ReviewApplication';
+import VerificationSuccess from './pages/Admin/VerificationSuccess';
 
 // Global Styles
 import './styles/Global.css';
@@ -41,6 +47,7 @@ function App() {
         <Navbar />
         <main className="main-content">
           <Routes>
+            {/* பொதுவான ரூட்கள் */}
             <Route path="/" element={<HomeScreen />} />
             <Route path="/about" element={<AboutUs />} />
             <Route path="/contact" element={<ContactUs />} />
@@ -59,14 +66,18 @@ function App() {
             <Route path="/messaging" element={<Messaging />} />
             <Route path="/notifications" element={<div className="container py-5"><h4>Notifications coming soon...</h4></div>} />
             
-            {/* அட்மின் ரூட்கள் */}
+            {/* அட்மின் ரூட்கள் - வரிசைப்படுத்தப்பட்டுள்ளது */}
             <Route path="/admin/home" element={<AdminHome />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} /> 
             <Route path="/admin/post" element={<AdminPost />} />
-            <Route path="/admin/dashboard" element={<AdminHome />} /> 
             <Route path="/admin/upcoming-events-list" element={<UpcomingEventsList />} />
             <Route path="/admin/create-event" element={<CreateEvent />} />
             <Route path="/admin/job-vacancies" element={<JobVacancyList />} />
             <Route path="/admin/create-job" element={<CreateJob />} />
+            <Route path="/admin/alumni" element={<AlumniManagement />} />
+            <Route path="/admin/review-application" element={<ReviewApplication />} />
+            <Route path="/admin/verify-success" element={<VerificationSuccess />} />
+            <Route path="/admin/view-profile" element={<ViewProfile />} />
           </Routes>
         </main>
       </div>
