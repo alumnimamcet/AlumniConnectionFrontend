@@ -2,68 +2,167 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminNavbar from '../../components/admin/AdminNavbar';
 
+/** * CONFIGURATION: Centralized form metadata and constants
+ */
+const FORM_CONFIG = {
+  TITLE: "Add New Alumni",
+  STORAGE_KEY: 'alumniData',
+  SUCCESS_MSG: "Alumni Added Successfully!",
+  REDIRECT_PATH: '/admin/alumni',
+  DEPARTMENTS: ["CSE", "IT", "ECE", "EEE", "MECH", "CIVIL"],
+  LABELS: {
+    NAME: "Full Name",
+    EMAIL: "Email",
+    DEPT: "Department",
+    BATCH: "Batch",
+    ROLE: "Current Role",
+    COMPANY: "Company Name",
+    SAVE_BTN: "SAVE ALUMNI",
+    CANCEL_BTN: "CANCEL"
+  },
+  PLACEHOLDERS: {
+    BATCH: "2024",
+    ROLE: "e.g. Software Engineer"
+  }
+};
+
+/** * COMPONENT: FormField
+ * Reusable input wrapper to prevent repetitive JSX
+ */
+const FormField = ({ label, children }) => (
+  <div className="mb-3">
+    <label className="form-label small fw-bold">{label}</label>
+    {children}
+  </div>
+);
+
+/** * MAIN COMPONENT: AddAlumni
+ */
 const AddAlumni = () => {
-    const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        name: '', email: '', dept: 'CSE', batch: '', role: '', company: '', status: 'Verified'
-    });
+  const navigate = useNavigate();
+  
+  // Initial state driven by logic, not hardcoded strings
+  const [formData, setFormData] = useState({
+    name: '', 
+    email: '', 
+    dept: FORM_CONFIG.DEPARTMENTS[0], 
+    batch: '', 
+    role: '', 
+    company: '', 
+    status: 'Verified'
+  });
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const existingData = JSON.parse(localStorage.getItem('alumniData')) || [];
-        const newData = { ...formData, id: Date.now() }; // Unique ID-க்காக
-        
-        const updatedList = [...existingData, newData];
-        localStorage.setItem('alumniData', JSON.stringify(updatedList));
-        
-        alert("Alumni Added Successfully!");
-        navigate('/admin/alumni'); // லிஸ்ட் பக்கத்திற்கு திரும்ப செல்ல
-    };
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
-    return (
-        <div style={{ backgroundColor: '#fff', minHeight: '100vh' }}>
-            <AdminNavbar />
-            <div className="container py-5">
-                <div className="card shadow-sm mx-auto p-4" style={{ maxWidth: '600px' }}>
-                    <h4 className="fw-bold text-danger mb-4">Add New Alumni</h4>
-                    <form onSubmit={handleSubmit}>
-                        <div className="mb-3">
-                            <label className="form-label small fw-bold">Full Name</label>
-                            <input type="text" className="form-control" required onChange={(e) => setFormData({...formData, name: e.target.value})} />
-                        </div>
-                        <div className="mb-3">
-                            <label className="form-label small fw-bold">Email</label>
-                            <input type="email" className="form-control" required onChange={(e) => setFormData({...formData, email: e.target.value})} />
-                        </div>
-                        <div className="row">
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label small fw-bold">Department</label>
-                                <select className="form-select" onChange={(e) => setFormData({...formData, dept: e.target.value})}>
-                                    <option>CSE</option><option>IT</option><option>ECE</option><option>EEE</option><option>MECH</option><option>CIVIL</option>
-                                </select>
-                            </div>
-                            <div className="col-md-6 mb-3">
-                                <label className="form-label small fw-bold">Batch</label>
-                                <input type="number" className="form-control" placeholder="2024" required onChange={(e) => setFormData({...formData, batch: e.target.value})} />
-                            </div>
-                        </div>
-                        <div className="mb-3">
-                            <label className="form-label small fw-bold">Current Role</label>
-                            <input type="text" className="form-control" placeholder="e.g. Software Engineer" onChange={(e) => setFormData({...formData, role: e.target.value})} />
-                        </div>
-                        <div className="mb-4">
-                            <label className="form-label small fw-bold">Company Name</label>
-                            <input type="text" className="form-control" onChange={(e) => setFormData({...formData, company: e.target.value})} />
-                        </div>
-                        <div className="d-flex gap-2">
-                            <button type="submit" className="btn btn-danger w-100 fw-bold">SAVE ALUMNI</button>
-                            <button type="button" className="btn btn-outline-secondary w-100 fw-bold" onClick={() => navigate(-1)}>CANCEL</button>
-                        </div>
-                    </form>
-                </div>
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const existingData = JSON.parse(localStorage.getItem(FORM_CONFIG.STORAGE_KEY)) || [];
+    const newData = { ...formData, id: Date.now() };
+    
+    const updatedList = [...existingData, newData];
+    localStorage.setItem(FORM_CONFIG.STORAGE_KEY, JSON.stringify(updatedList));
+    
+    alert(FORM_CONFIG.SUCCESS_MSG);
+    navigate(FORM_CONFIG.REDIRECT_PATH);
+  };
+
+  return (
+    <div style={{ backgroundColor: '#fff', minHeight: '100vh' }}>
+      <AdminNavbar />
+      <div className="container py-5">
+        <div className="card shadow-sm mx-auto p-4" style={{ maxWidth: '600px' }}>
+          <h4 className="fw-bold text-danger mb-4">{FORM_CONFIG.TITLE}</h4>
+          
+          <form onSubmit={handleSubmit}>
+            {/* Name Field */}
+            <FormField label={FORM_CONFIG.LABELS.NAME}>
+              <input 
+                type="text" 
+                className="form-control" 
+                required 
+                onChange={(e) => handleChange('name', e.target.value)} 
+              />
+            </FormField>
+
+            {/* Email Field */}
+            <FormField label={FORM_CONFIG.LABELS.EMAIL}>
+              <input 
+                type="email" 
+                className="form-control" 
+                required 
+                onChange={(e) => handleChange('email', e.target.value)} 
+              />
+            </FormField>
+
+            <div className="row">
+              {/* Department Select */}
+              <div className="col-md-6">
+                <FormField label={FORM_CONFIG.LABELS.DEPT}>
+                  <select 
+                    className="form-select" 
+                    value={formData.dept}
+                    onChange={(e) => handleChange('dept', e.target.value)}
+                  >
+                    {FORM_CONFIG.DEPARTMENTS.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+
+              {/* Batch Field */}
+              <div className="col-md-6">
+                <FormField label={FORM_CONFIG.LABELS.BATCH}>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    placeholder={FORM_CONFIG.PLACEHOLDERS.BATCH} 
+                    required 
+                    onChange={(e) => handleChange('batch', e.target.value)} 
+                  />
+                </FormField>
+              </div>
             </div>
+
+            {/* Role Field */}
+            <FormField label={FORM_CONFIG.LABELS.ROLE}>
+              <input 
+                type="text" 
+                className="form-control" 
+                placeholder={FORM_CONFIG.PLACEHOLDERS.ROLE} 
+                onChange={(e) => handleChange('role', e.target.value)} 
+              />
+            </FormField>
+
+            {/* Company Field */}
+            <FormField label={FORM_CONFIG.LABELS.COMPANY}>
+              <input 
+                type="text" 
+                className="form-control" 
+                onChange={(e) => handleChange('company', e.target.value)} 
+              />
+            </FormField>
+
+            {/* Action Buttons */}
+            <div className="d-flex gap-2 mt-2">
+              <button type="submit" className="btn btn-danger w-100 fw-bold">
+                {FORM_CONFIG.LABELS.SAVE_BTN}
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-outline-secondary w-100 fw-bold" 
+                onClick={() => navigate(-1)}
+              >
+                {FORM_CONFIG.LABELS.CANCEL_BTN}
+              </button>
+            </div>
+          </form>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default AddAlumni;
