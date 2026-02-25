@@ -4,10 +4,11 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // Layout Components
 import Navbar from './components/layout/Navbar';
+import BottomNav from './components/layout/BottomNav';
 
 // Page Components
 import HomeScreen from './pages/Home/HomeScreen';
-import AlumniDashboard from './pages/Home/AlumniDashboard';
+import AlumniDashboard from './pages/Alumni/AlumniDashboard';
 import AboutUs from './pages/Static/AboutUs';
 import ContactUs from './pages/Static/ContactUs';
 import ResponseSubmitted from './pages/Static/ResponseSubmitted';
@@ -28,6 +29,7 @@ import CreateEvent from './pages/Admin/CreateEvent';
 import Events from './pages/Home/Events';
 import Messaging from './pages/Home/Messaging';
 import AdminDashboard from './pages/Admin/AdminDashboardHome';
+import Profile from './pages/Alumni/Profile';
 
 // Inside <Routes>
 
@@ -41,7 +43,12 @@ import AdminDashboard from './pages/Admin/AdminDashboardHome';
 // Inside your <Routes> block
 
 // Global Styles
+import { storage } from './utils/storage';
 import './styles/Global.css';
+import './styles/Dashboard.css';
+
+// Initialize persistent storage
+storage.init();
 
 /**
  * Main Application Component
@@ -50,9 +57,9 @@ import './styles/Global.css';
 function App() {
   return (
     <Router>
-      <div className="app-container">
+      <div className="App d-flex flex-column min-vh-100">
         <Navbar />
-        <main className="main-content">
+        <main className="flex-grow-1 pb-lg-0 pb-5 mb-3 mb-lg-0">
           <Routes>
             <Route path="/" element={<HomeScreen />} />
             <Route path="/about" element={<AboutUs />} />
@@ -67,6 +74,7 @@ function App() {
             <Route path="/login/alumni" element={<AlumniLogin />} />
             <Route path="/login/admin" element={<AdminLogin />} />
             <Route path="/alumni/home" element={<AlumniDashboard />} />
+            <Route path="/alumni/profile" element={<Profile />} />
             <Route path="/jobs" element={<JobPostings />} />
             <Route path="/admin/create-event" element={<CreateEvent />} />
             <Route path="/events" element={<Events />} />
@@ -76,6 +84,7 @@ function App() {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Routes>
         </main>
+        <BottomNav />
       </div>
     </Router>
   );
