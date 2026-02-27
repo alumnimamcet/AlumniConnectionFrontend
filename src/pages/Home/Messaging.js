@@ -1,160 +1,134 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { storage } from '../../utils/storage';
-import Toast from '../../components/common/Toast';
+import {
+  ChatSidebar,
+  ChatItem,
+  ChatWindow,
+  ChatEmptyState
+} from '../../components/messaging';
+
 const Messaging = () => {
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [msgInput, setMsgInput] = useState("");
-  const [toast, setToast] = useState(null);
-  const [mobileView, setMobileView] = useState('list'); // 'list' or 'chat'
+  const [msgInput, setMsgInput] = useState('');
+  const [search, setSearch] = useState('');
+  // Mobile: 'list' | 'chat'
+  const [mobileView, setMobileView] = useState('list');
+  const location = useLocation();
 
   useEffect(() => {
-    const initMessaging = () => {
-      const allChats = storage.getChats();
-      setChats(allChats);
-      if (allChats.length > 0) setActiveChat(allChats[0]);
-      setLoading(false);
-    };
-    initMessaging();
-  }, []);
+    const allChats = storage.getChats();
+    setChats(allChats);
 
-  const handleSendMessage = () => {
+    // Deep link handling
+    const params = new URLSearchParams(location.search);
+    const chatId = params.get('chatId');
+
+    if (chatId) {
+      const targetChat = allChats.find(c => c.id === parseInt(chatId));
+      if (targetChat) {
+        setActiveChat(targetChat);
+        setMobileView('chat');
+      } else if (allChats.length > 0) {
+        setActiveChat(allChats[0]);
+      }
+    } else if (allChats.length > 0) {
+      setActiveChat(allChats[0]);
+    }
+
+    setLoading(false);
+  }, [location.search]);
+
+  const handleSelectChat = (chat) => {
+    setActiveChat(chat);
+    setMobileView('chat');
+  };
+
+  const handleSend = () => {
     if (!msgInput.trim() || !activeChat) return;
 
     const newMessage = {
       id: Date.now().toString(),
-      senderId: 'alumni_1', // Assuming current user is alumni_1
-      text: msgInput,
+      senderId: 'alumni_1',
+      text: msgInput.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    const updatedActiveChat = {
-      ...activeChat,
-      messages: [...activeChat.messages, newMessage]
-    };
-
-    const updatedChats = chats.map(c => c.id === activeChat.id ? updatedActiveChat : c);
+    const updatedChat = { ...activeChat, messages: [...activeChat.messages, newMessage] };
+    const updatedChats = chats.map(c => c.id === activeChat.id ? updatedChat : c);
 
     setChats(updatedChats);
-    setActiveChat(updatedActiveChat);
-    storage.saveChat(activeChat.id, updatedActiveChat.messages);
-    setMsgInput("");
+    setActiveChat(updatedChat);
+    storage.saveChat(activeChat.id, updatedChat.messages);
+    setMsgInput('');
   };
 
-  if (loading) return <div className="p-5 text-center">Loading Messages...</div>;
+  const filteredChats = chats.filter(c =>
+    c.userName.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) return (
+    <div className="dashboard-main-bg min-vh-100 d-flex align-items-center justify-content-center">
+      <div className="spinner-border text-danger" role="status"></div>
+    </div>
+  );
 
   return (
-    <div className="dashboard-main-bg py-4 min-vh-100">
-      <div className="container">
-        <div className="row g-0 rounded-3 shadow-sm bg-white overflow-hidden border" style={{ height: '80vh' }}>
+    <div className="dashboard-main-bg" style={{ height: 'calc(100vh - 64px)' }}>
+      <div className="container-fluid h-100 px-0 px-md-3 py-0 py-md-3 d-flex" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        <div
+          className="row g-0 flex-grow-1 bg-white rounded-0 rounded-md-3 overflow-hidden w-100"
+          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.10)', border: '1px solid #e0e0e0' }}
+        >
 
-          {/* CHAT LIST PANAL (Left) */}
-          <div className={`col-lg-4 border-end flex-column h-100 ${mobileView === 'chat' ? 'd-none d-lg-flex' : 'd-flex'}`}>
-            <div className="p-3 border-bottom d-flex justify-content-between align-items-center bg-white">
-              <h6 className="fw-bold mb-0">Messaging</h6>
-              <button className="btn btn-link text-muted"><i className="fas fa-ellipsis-h"></i></button>
-            </div>
-            <div className="p-3">
-              <div className="input-group input-group-sm bg-light rounded-pill px-2">
-                <span className="input-group-text bg-transparent border-0"><i className="fas fa-search text-muted"></i></span>
-                <input type="text" className="form-control bg-transparent border-0" placeholder="Search messages" />
-              </div>
-            </div>
-            <div className="flex-grow-1 overflow-auto">
-              {chats.map(chat => (
-                <div
-                  key={chat.id}
-                  className={`p-3 d-flex gap-3 align-items-center border-bottom cursor-pointer hover-bg-light ${activeChat?.id === chat.id ? 'border-start border-4 border-mamcet-red bg-light' : ''}`}
-                  onClick={() => {
-                    setActiveChat(chat);
-                    setMobileView('chat');
-                  }}
-                >
-                  <div className="avatar-md bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center position-relative" style={{ width: '48px', height: '48px', minWidth: '48px' }}>
-                    {chat.userInitial}
-                    {chat.status === 'online' && <span className="position-absolute bottom-0 end-0 p-1 bg-success border border-white rounded-circle"></span>}
-                  </div>
-                  <div className="overflow-hidden flex-grow-1">
-                    <div className="d-flex justify-content-between mb-1">
-                      <h6 className="small fw-bold mb-0 text-dark">{chat.userName}</h6>
-                      <span className="extra-small text-muted">{chat.messages[chat.messages.length - 1]?.timestamp}</span>
-                    </div>
-                    <p className="extra-small text-muted mb-0 text-truncate">
-                      {chat.messages[chat.messages.length - 1]?.senderId === 'alumni_1' ? 'You: ' : ''}
-                      {chat.messages[chat.messages.length - 1]?.text}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+          {/* ─── LEFT: Chat Sidebar ─── */}
+          <div className={`col-12 col-lg-4 d-flex flex-column h-100 ${mobileView === 'chat' ? 'd-none d-lg-flex' : 'd-flex'}`}>
+            <ChatSidebar>
+              <ChatSidebar.Header />
+              <ChatSidebar.Search value={search} onChange={setSearch} />
+              <ChatSidebar.List>
+                {filteredChats.length === 0 ? (
+                  <p className="text-muted text-center py-5 small">No conversations found</p>
+                ) : (
+                  filteredChats.map(chat => (
+                    <ChatItem
+                      key={chat.id}
+                      chat={chat}
+                      isActive={activeChat?.id === chat.id}
+                      onClick={() => handleSelectChat(chat)}
+                    />
+                  ))
+                )}
+              </ChatSidebar.List>
+            </ChatSidebar>
           </div>
 
-          {/* CONVERSATION WINDOW (Right) */}
-          <div className={`col-lg-8 flex-column h-100 ${mobileView === 'list' ? 'd-none d-lg-flex' : 'd-flex'}`}>
+          {/* ─── RIGHT: Chat Window ─── */}
+          <div className={`col-12 col-lg-8 d-flex flex-column h-100 ${mobileView === 'list' ? 'd-none d-lg-flex' : 'd-flex'}`}>
             {activeChat ? (
-              <>
-                <div className="p-3 border-bottom d-flex justify-content-between align-items-center bg-white">
-                  <div className="d-flex align-items-center gap-2">
-                    <button className="btn btn-link p-0 d-lg-none text-dark me-2" onClick={() => setMobileView('list')}>
-                      <i className="fas fa-arrow-left"></i>
-                    </button>
-                    <h6 className="fw-bold mb-0">{activeChat.userName}</h6>
-                    <span className={`extra-small ${activeChat.status === 'online' ? 'text-success' : 'text-muted'}`}>
-                      {activeChat.status === 'online' ? 'Online' : 'Offline'}
-                    </span>
-                  </div>
-                  <div className="d-flex gap-3 text-muted">
-                    <i className="fas fa-video cursor-pointer"></i>
-                    <i className="fas fa-star cursor-pointer"></i>
-                  </div>
-                </div>
-
-                <div className="flex-grow-1 p-4 overflow-auto bg-light d-flex flex-column gap-3">
-                  {activeChat.messages.map(msg => (
-                    <div
-                      key={msg.id}
-                      className={`max-w-75 rounded-3 p-2 px-3 shadow-sm border ${msg.senderId === 'alumni_1' ? 'align-self-end text-white bg-mamcet-red' : 'align-self-start bg-white text-dark'}`}
-                      style={{ maxWidth: '70%' }}
-                    >
-                      <p className="small mb-1">{msg.text}</p>
-                      <div className={`extra-small text-end ${msg.senderId === 'alumni_1' ? 'text-white-50' : 'text-muted'}`}>{msg.timestamp}</div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="p-3 bg-white border-top">
-                  <div className="bg-light rounded-3 p-2">
-                    <textarea
-                      className="form-control border-0 bg-transparent"
-                      rows="2"
-                      placeholder="Write a message..."
-                      value={msgInput}
-                      onChange={(e) => setMsgInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
-                    ></textarea>
-                    <div className="d-flex justify-content-between align-items-center mt-2 px-2">
-                      <div className="d-flex gap-3 text-muted fs-6">
-                        <i className="fas fa-image cursor-pointer"></i>
-                        <i className="fas fa-paperclip cursor-pointer"></i>
-                        <i className="fas fa-smile cursor-pointer"></i>
-                      </div>
-                      <button className="btn btn-mamcet-red btn-sm px-4 fw-bold rounded-pill" onClick={handleSendMessage}>Send</button>
-                    </div>
-                  </div>
-                </div>
-              </>
+              <ChatWindow>
+                <ChatWindow.Header
+                  chat={activeChat}
+                  onBack={() => setMobileView('list')}
+                />
+                <ChatWindow.Messages messages={activeChat.messages} />
+                <ChatWindow.Input
+                  value={msgInput}
+                  onChange={setMsgInput}
+                  onSend={handleSend}
+                />
+              </ChatWindow>
             ) : (
-              <div className="flex-grow-1 d-flex align-items-center justify-content-center bg-light text-muted">
-                Select a conversation to start messaging
-              </div>
+              <ChatWindow>
+                <ChatEmptyState />
+              </ChatWindow>
             )}
           </div>
 
         </div>
       </div>
-
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 };

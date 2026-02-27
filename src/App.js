@@ -23,7 +23,7 @@ import JobPostings from './pages/Home/JobPostings';
 import CreateEvent from './pages/Admin/CreateEvent';
 import Events from './pages/Home/Events';
 import Messaging from './pages/Home/Messaging';
-import AdminDashboard from './pages/Admin/AdminDashboardHome';
+import Notification from './pages/Home/Notification';
 import Profile from './pages/Alumni/Profile';
 
 // --- Admin Pages Import ---
@@ -75,7 +75,7 @@ function App() {
             <Route path="/jobs" element={<JobPostings />} />
             <Route path="/events" element={<Events />} />
             <Route path="/messaging" element={<Messaging />} />
-            <Route path="/notifications" element={<div className="container py-5"><h4>Notifications coming soon...</h4></div>} />
+            <Route path="/notifications" element={<Notification />} />
 
             {/* Admin Routes - Sorted */}
             <Route path="/admin/home" element={<AdminHome />} />

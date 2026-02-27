@@ -42,5 +42,43 @@
                 "timestamp": "Yesterday"
             }
         ]
+    },
+    {
+        "id": 3,
+        "participants": [
+            "alumni_1",
+            "alumni_3"
+        ],
+        "userName": "Sophia Carter",
+        "userRole": "Product Manager at Microsoft",
+        "userInitial": "S",
+        "status": "online",
+        "messages": [
+            {
+                "id": "m4",
+                "senderId": "alumni_3",
+                "text": "Hey! How have you been? Let's catch up soon!",
+                "timestamp": "15 mins ago"
+            }
+        ]
+    },
+    {
+        "id": 4,
+        "participants": [
+            "alumni_1",
+            "alumni_4"
+        ],
+        "userName": "Ethan Bennett",
+        "userRole": "Senior Engineer at Amazon",
+        "userInitial": "E",
+        "status": "offline",
+        "messages": [
+            {
+                "id": "m5",
+                "senderId": "alumni_4",
+                "text": "The project looks great. I'll review it tonight.",
+                "timestamp": "1 hour ago"
+            }
+        ]
     }
 ]

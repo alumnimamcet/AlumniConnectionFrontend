@@ -20,23 +20,35 @@ const STORAGE_KEYS = {
 };
 
 const initializeStorage = () => {
-    if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(usersData));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.FEED)) {
-        localStorage.setItem(STORAGE_KEYS.FEED, JSON.stringify(feedData));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.JOBS)) {
-        localStorage.setItem(STORAGE_KEYS.JOBS, JSON.stringify(jobsData));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.EVENTS)) {
-        localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(eventsData));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.CHATS)) {
-        localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(chatsData));
-    }
-    // Do not auto-login during initialization
-    // The user must log in through the login page
+    const ensureData = (key, initialData) => {
+        const existing = localStorage.getItem(key);
+        if (!existing) {
+            localStorage.setItem(key, JSON.stringify(initialData));
+        } else {
+            // Optional: Merge logic if needed. For now, let's just make sure we have the latest
+            // However, merging might overwrite user changes.
+            // For chats, we definitely want to ensure new chats from the JSON are added.
+            if (key === STORAGE_KEYS.CHATS) {
+                const existingChats = JSON.parse(existing);
+                const initialChats = initialData;
+                const mergedChats = [...existingChats];
+
+                initialChats.forEach(chat => {
+                    if (!mergedChats.find(c => c.id === chat.id)) {
+                        mergedChats.push(chat);
+                    }
+                });
+
+                localStorage.setItem(key, JSON.stringify(mergedChats));
+            }
+        }
+    };
+
+    ensureData(STORAGE_KEYS.USERS, usersData);
+    ensureData(STORAGE_KEYS.FEED, feedData);
+    ensureData(STORAGE_KEYS.JOBS, jobsData);
+    ensureData(STORAGE_KEYS.EVENTS, eventsData);
+    ensureData(STORAGE_KEYS.CHATS, chatsData);
 };
 
 const getCollection = (key) => {
