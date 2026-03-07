@@ -24,6 +24,7 @@ import JobPostings from './pages/Home/JobPostings';
 import CreateEvent from './pages/Admin/CreateEvent';
 import Events from './pages/Home/Events';
 import Messaging from './pages/Home/Messaging';
+import Notification from './pages/Home/Notification';
 import Profile from './pages/Alumni/Profile';
 
 // --- Admin Pages Import ---
@@ -56,31 +57,30 @@ try {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="App d-flex flex-column min-vh-100">
-          <Navbar />
-          <main className="flex-grow-1 pb-lg-0 pb-5 mb-3 mb-lg-0">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<HomeScreen />} />
-              <Route path="/about" element={<AboutUs />} />
-              <Route path="/contact" element={<ContactUs />} />
-              <Route path="/success" element={<ResponseSubmitted />} />
-              <Route path="/register" element={<RoleSelection />} />
-              <Route path="/signup/student" element={<StudentSignUp />} />
-              <Route path="/signup/alumni" element={<AlumniSignUp />} />
-              <Route path="/signup/admin" element={<AdminSignUp />} />
-              <Route path="/login" element={<LoginRoleSelection />} />
-              <Route path="/login/student" element={<StudentLogin />} />
-              <Route path="/login/alumni" element={<AlumniLogin />} />
-              <Route path="/login/admin" element={<AdminLogin />} />
-              <Route path="/alumni/home" element={<AlumniDashboard />} />
-              <Route path="/alumni/profile" element={<Profile />} />
-              <Route path="/jobs" element={<JobPostings />} />
-              <Route path="/events" element={<Events />} />
-              <Route path="/messaging" element={<Messaging />} />
-              <Route path="/notifications" element={<div className="container py-5"><h4>Notifications coming soon...</h4></div>} />
+    <Router>
+      <div className="App d-flex flex-column min-vh-100">
+        <Navbar />
+        <main className="flex-grow-1 pb-lg-0 pb-5 mb-3 mb-lg-0">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<HomeScreen />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/success" element={<ResponseSubmitted />} />
+            <Route path="/register" element={<RoleSelection />} />
+            <Route path="/signup/student" element={<StudentSignUp />} />
+            <Route path="/signup/alumni" element={<AlumniSignUp />} />
+            <Route path="/signup/admin" element={<AdminSignUp />} />
+            <Route path="/login" element={<LoginRoleSelection />} />
+            <Route path="/login/student" element={<StudentLogin />} />
+            <Route path="/login/alumni" element={<AlumniLogin />} />
+            <Route path="/login/admin" element={<AdminLogin />} />
+            <Route path="/alumni/home" element={<AlumniDashboard />} />
+            <Route path="/alumni/profile" element={<Profile />} />
+            <Route path="/jobs" element={<JobPostings />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/messaging" element={<Messaging />} />
+            <Route path="/notifications" element={<Notification />} />
 
               {/* Admin Routes - Sorted */}
               <Route path="/admin/home" element={<AdminHome />} />

@@ -42,5 +42,81 @@
                 "timestamp": "Yesterday"
             }
         ]
+    },
+    {
+        "id": 3,
+        "participants": [
+            "alumni_1",
+            "alumni_3"
+        ],
+        "userName": "Sophia Carter",
+        "userRole": "Product Manager at Microsoft",
+        "userInitial": "S",
+        "status": "online",
+        "messages": [
+            {
+                "id": "m4",
+                "senderId": "alumni_3",
+                "text": "Hey! How have you been? Let's catch up soon!",
+                "timestamp": "15 mins ago"
+            }
+        ]
+    },
+    {
+        "id": 4,
+        "participants": [
+            "alumni_1",
+            "alumni_4"
+        ],
+        "userName": "Ethan Bennett",
+        "userRole": "Senior Engineer at Amazon",
+        "userInitial": "E",
+        "status": "offline",
+        "messages": [
+            {
+                "id": "m5",
+                "senderId": "alumni_4",
+                "text": "The project looks great. I'll review it tonight.",
+                "timestamp": "1 hour ago"
+            }
+        ]
+    },
+    {
+        "id": 5,
+        "participants": [
+            "alumni_1",
+            "alumni_5"
+        ],
+        "userName": "David Miller",
+        "userRole": "Technical Lead at Netflix",
+        "userInitial": "D",
+        "status": "online",
+        "messages": [
+            {
+                "id": "m6",
+                "senderId": "alumni_5",
+                "text": "Can you share the PPT for tomorrow's meeting?",
+                "timestamp": "5 hours ago"
+            }
+        ]
+    },
+    {
+        "id": 6,
+        "participants": [
+            "alumni_1",
+            "alumni_6"
+        ],
+        "userName": "Aisha Khan",
+        "userRole": "Data Scientist at Meta",
+        "userInitial": "A",
+        "status": "online",
+        "messages": [
+            {
+                "id": "m7",
+                "senderId": "alumni_6",
+                "text": "Great seeing you at the event yesterday!",
+                "timestamp": "Yesterday"
+            }
+        ]
     }
 ]

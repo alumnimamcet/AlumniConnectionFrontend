@@ -1,0 +1,135 @@
+{
+    "events": [
+        {
+            "id": 1,
+            "title": "Pongal Celebration",
+            "description": "Join us for a vibrant Pongal Celebration event. Celebrate the harvest season with our alumni community!",
+            "date": "March 15, 2026",
+            "isRead": false,
+            "icon": "🎉"
+        },
+        {
+            "id": 2,
+            "title": "Annual Alumni Meet",
+            "description": "Network with fellow alumni and celebrate our shared memories at the annual reunion.",
+            "date": "April 20, 2026",
+            "isRead": false,
+            "icon": "👥"
+        },
+        {
+            "id": 8,
+            "title": "Tech Talk: AI in 2026",
+            "description": "An insightful session on the future of AI and its impact on various industries.",
+            "date": "May 5, 2026",
+            "isRead": false,
+            "icon": "🤖"
+        },
+        {
+            "id": 9,
+            "title": "MAMCET Hackathon",
+            "description": "Compete with the brightest minds and showcase your coding skills in our annual hackathon.",
+            "date": "June 12, 2026",
+            "isRead": true,
+            "icon": "💻"
+        }
+    ],
+    "jobs": [
+        {
+            "id": 3,
+            "title": "Administrative Assistant",
+            "company": "Tech Innovations Inc.",
+            "description": "Join our administrative team! Responsibilities include managing schedules, coordinating meetings, and supporting multiple departments.",
+            "posted": "2 days ago",
+            "isRead": false,
+            "icon": "💼"
+        },
+        {
+            "id": 4,
+            "title": "Marketing Specialist",
+            "company": "Digital Solutions Ltd.",
+            "description": "We're looking for a creative marketing professional to drive our digital campaigns and brand growth.",
+            "posted": "1 week ago",
+            "isRead": false,
+            "icon": "📊"
+        },
+        {
+            "id": 10,
+            "title": "Software Engineer (React)",
+            "company": "CloudScale Systems",
+            "description": "We are seeking a talented React developer to build scalable web applications and improve user experiences.",
+            "posted": "3 hours ago",
+            "isRead": false,
+            "icon": "⚛️"
+        },
+        {
+            "id": 11,
+            "title": "Data Analyst",
+            "company": "Insight Data Corp",
+            "description": "Help us turn data into actionable insights. Proficiency in SQL and data visualization tools required.",
+            "posted": "4 days ago",
+            "isRead": true,
+            "icon": "📈"
+        },
+        {
+            "id": 12,
+            "title": "UX Designer",
+            "company": "Creative Minds Studio",
+            "description": "Create intuitive and beautiful user interfaces for our global clients.",
+            "posted": "2 weeks ago",
+            "isRead": false,
+            "icon": "🎨"
+        }
+    ],
+    "messages": [
+        {
+            "id": 5,
+            "chatId": 3,
+            "sender": "Sophia Carter",
+            "lastMessage": "Hey! How have you been? Let's catch up soon!",
+            "unreadCount": 3,
+            "timestamp": "15 mins ago",
+            "isRead": false,
+            "avatar": "SC"
+        },
+        {
+            "id": 6,
+            "chatId": 4,
+            "sender": "Ethan Bennett",
+            "lastMessage": "The project looks great. I'll review it tonight.",
+            "unreadCount": 1,
+            "timestamp": "1 hour ago",
+            "isRead": false,
+            "avatar": "EB"
+        },
+        {
+            "id": 7,
+            "chatId": 1,
+            "sender": "Priya Sharma",
+            "lastMessage": "Thanks for the referral! The interview went well.",
+            "unreadCount": 0,
+            "timestamp": "3 hours ago",
+            "isRead": true,
+            "avatar": "PS"
+        },
+        {
+            "id": 13,
+            "chatId": 5,
+            "sender": "David Miller",
+            "lastMessage": "Can you share the PPT for tomorrow's meeting?",
+            "unreadCount": 2,
+            "timestamp": "5 hours ago",
+            "isRead": false,
+            "avatar": "DM"
+        },
+        {
+            "id": 14,
+            "chatId": 6,
+            "sender": "Aisha Khan",
+            "lastMessage": "Great seeing you at the event yesterday!",
+            "unreadCount": 0,
+            "timestamp": "Yesterday",
+            "isRead": true,
+            "avatar": "AK"
+        }
+    ]
+}
