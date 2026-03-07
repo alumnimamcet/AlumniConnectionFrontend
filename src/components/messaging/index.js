@@ -13,17 +13,34 @@ export const ChatSidebar = ({ children }) => (
     </div>
 );
 
-ChatSidebar.Header = function ChatSidebarHeader({ onCompose }) {
+ChatSidebar.Header = function ChatSidebarHeader({ onCompose, isComposing, onCancel }) {
     return (
         <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
-            <h5 className="fw-bold mb-0" style={{ color: '#c84022' }}>Messaging</h5>
-            <button
-                className="btn btn-link p-1 text-muted"
-                title="New message"
-                onClick={onCompose}
-            >
-                <i className="fas fa-edit" style={{ fontSize: '1rem' }}></i>
-            </button>
+            <div className="d-flex align-items-center gap-2">
+                {isComposing && (
+                    <button
+                        className="btn btn-link p-0 text-dark me-1"
+                        onClick={onCancel}
+                        title="Back to chats"
+                        style={{ border: 'none', background: 'none' }}
+                    >
+                        <i className="fas fa-arrow-left"></i>
+                    </button>
+                )}
+                <h5 className="fw-bold mb-0" style={{ color: '#c84022' }}>
+                    {isComposing ? 'New Message' : 'Messaging'}
+                </h5>
+            </div>
+            {!isComposing && (
+                <button
+                    className="btn btn-link p-1 text-muted"
+                    title="New message"
+                    onClick={onCompose}
+                    style={{ border: 'none', background: 'none' }}
+                >
+                    <i className="fas fa-edit" style={{ fontSize: '1rem' }}></i>
+                </button>
+            )}
         </div>
     );
 };
@@ -116,7 +133,7 @@ export const ChatWindow = ({ children }) => (
     </div>
 );
 
-ChatWindow.Header = function ChatWindowHeader({ chat, onBack, onClearChat, onDeleteChat }) {
+ChatWindow.Header = function ChatWindowHeader({ chat, onBack, onClearChat, onDeleteChat, onVoiceCall }) {
     const [showMenu, setShowMenu] = React.useState(false);
     const menuRef = React.useRef(null);
 
@@ -154,11 +171,20 @@ ChatWindow.Header = function ChatWindowHeader({ chat, onBack, onClearChat, onDel
                 </div>
             </div>
             <div className="d-flex gap-3 text-muted position-relative" ref={menuRef}>
-                <button className="btn btn-link text-muted p-1" title="Video call"><i className="fas fa-video"></i></button>
+                <button
+                    className="btn btn-link text-muted p-1"
+                    title="Voice call"
+                    onClick={() => onVoiceCall && onVoiceCall(chat)}
+                >
+                    <i className="fas fa-phone-alt"></i>
+                </button>
                 <button
                     className="btn btn-link text-muted p-1"
                     title="More options"
-                    onClick={() => setShowMenu(!showMenu)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(!showMenu);
+                    }}
                 >
                     <i className="fas fa-ellipsis-h"></i>
                 </button>
@@ -166,20 +192,20 @@ ChatWindow.Header = function ChatWindowHeader({ chat, onBack, onClearChat, onDel
                 {showMenu && (
                     <div
                         className="position-absolute bg-white border rounded shadow-sm py-1"
-                        style={{ top: '100%', right: 0, zIndex: 1000, minWidth: '180px' }}
+                        style={{ top: '100%', right: 0, zIndex: 1060, minWidth: '180px' }}
                     >
                         <button
-                            className="dropdown-item px-3 py-2 text-dark d-flex align-items-center gap-2 border-0 bg-transparent w-100 text-start"
+                            className="dropdown-item px-3 py-2 text-dark d-flex align-items-center gap-2 border-0 bg-transparent w-100 text-start menu-item-hover"
                             style={{ fontSize: '0.85rem' }}
-                            onClick={() => { onClearChat(); setShowMenu(false); }}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClearChat(); setShowMenu(false); }}
                         >
                             <i className="fas fa-eraser text-muted" style={{ width: '16px' }}></i>
                             Clear Chat
                         </button>
                         <button
-                            className="dropdown-item px-3 py-2 text-danger d-flex align-items-center gap-2 border-0 bg-transparent w-100 text-start"
+                            className="dropdown-item px-3 py-2 text-danger d-flex align-items-center gap-2 border-0 bg-transparent w-100 text-start menu-item-hover"
                             style={{ fontSize: '0.85rem' }}
-                            onClick={() => { onDeleteChat(); setShowMenu(false); }}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteChat(); setShowMenu(false); }}
                         >
                             <i className="fas fa-trash-alt" style={{ width: '16px' }}></i>
                             Delete Conversation
@@ -311,7 +337,7 @@ export const ChatBubble = ({ msg, isMine }) => (
         <div
             className="px-3 py-2 rounded-3"
             style={{
-                maxWidth: '65%',
+                maxWidth: '85%',
                 backgroundColor: isMine ? '#c84022' : '#ffffff',
                 color: isMine ? 'white' : '#333',
                 boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
@@ -327,6 +353,81 @@ export const ChatBubble = ({ msg, isMine }) => (
         <span className="text-muted mt-1" style={{ fontSize: '0.7rem' }}>{msg.timestamp}</span>
     </div>
 );
+
+/**
+ * CallModal — Persistent bottom-right voice call widget
+ */
+ChatWindow.CallModal = function ChatWindowCallModal({ chat, onEndCall }) {
+    const [isMuted, setIsMuted] = React.useState(false);
+    const [isSpeakerOn, setIsSpeakerOn] = React.useState(false);
+
+    if (!chat) return null;
+
+    return (
+        <div
+            className="position-fixed"
+            style={{
+                zIndex: 2000,
+                bottom: '24px',
+                right: '24px',
+                animation: 'slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+            }}
+        >
+            <div
+                className="bg-white rounded-4 shadow-lg p-3 d-flex flex-column align-items-center gap-3 border"
+                style={{ width: '220px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}
+            >
+                {/* Header with name and status */}
+                <div className="d-flex align-items-center gap-2 w-100">
+                    <div
+                        className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
+                        style={{ width: '32px', height: '32px', backgroundColor: '#c84022', fontSize: '0.8rem' }}
+                    >
+                        {chat.userInitial}
+                    </div>
+                    <div className="overflow-hidden">
+                        <div className="fw-bold text-dark text-truncate" style={{ fontSize: '0.85rem' }}>{chat.userName}</div>
+                        <div className="text-mamcet-red extra-small fw-semibold animate-pulse">Calling...</div>
+                    </div>
+                </div>
+
+                {/* Call Controls */}
+                <div className="d-flex gap-3">
+                    <button
+                        className={`btn rounded-circle d-flex align-items-center justify-content-center border-0 ${isMuted ? 'bg-danger text-white' : 'btn-light text-muted'}`}
+                        style={{ width: '40px', height: '40px' }}
+                        title={isMuted ? "Unmute" : "Mute"}
+                        onClick={() => setIsMuted(!isMuted)}
+                    >
+                        <i className={`fas ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>
+                    </button>
+                    <button
+                        className={`btn rounded-circle d-flex align-items-center justify-content-center border-0 ${isSpeakerOn ? 'bg-primary text-white' : 'btn-light text-muted'}`}
+                        style={{ width: '40px', height: '40px' }}
+                        title={isSpeakerOn ? "Speaker Off" : "Speaker On"}
+                        onClick={() => setIsSpeakerOn(!isSpeakerOn)}
+                    >
+                        <i className={`fas ${isSpeakerOn ? 'fa-volume-up' : 'fa-volume-down'}`}></i>
+                    </button>
+                    <button
+                        onClick={onEndCall}
+                        className="btn btn-danger rounded-circle d-flex align-items-center justify-content-center border-0 shadow-sm"
+                        style={{ width: '40px', height: '40px', backgroundColor: '#dc3545' }}
+                        title="End Call"
+                    >
+                        <i className="fas fa-phone-slash" style={{ transform: 'rotate(225deg)', fontSize: '0.9rem' }}></i>
+                    </button>
+                </div>
+            </div>
+
+            <style>{`
+                @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+                @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+                .animate-pulse { animation: pulse 1.5s infinite ease-in-out; }
+            `}</style>
+        </div>
+    );
+};
 
 /**
  * EmptyState — When no chat is selected

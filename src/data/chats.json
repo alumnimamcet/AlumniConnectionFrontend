@@ -80,5 +80,43 @@
                 "timestamp": "1 hour ago"
             }
         ]
+    },
+    {
+        "id": 5,
+        "participants": [
+            "alumni_1",
+            "alumni_5"
+        ],
+        "userName": "David Miller",
+        "userRole": "Technical Lead at Netflix",
+        "userInitial": "D",
+        "status": "online",
+        "messages": [
+            {
+                "id": "m6",
+                "senderId": "alumni_5",
+                "text": "Can you share the PPT for tomorrow's meeting?",
+                "timestamp": "5 hours ago"
+            }
+        ]
+    },
+    {
+        "id": 6,
+        "participants": [
+            "alumni_1",
+            "alumni_6"
+        ],
+        "userName": "Aisha Khan",
+        "userRole": "Data Scientist at Meta",
+        "userInitial": "A",
+        "status": "online",
+        "messages": [
+            {
+                "id": "m7",
+                "senderId": "alumni_6",
+                "text": "Great seeing you at the event yesterday!",
+                "timestamp": "Yesterday"
+            }
+        ]
     }
 ]

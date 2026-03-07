@@ -14,13 +14,29 @@ const Messaging = () => {
   const [loading, setLoading] = useState(true);
   const [msgInput, setMsgInput] = useState('');
   const [search, setSearch] = useState('');
+  const [callingChat, setCallingChat] = useState(null);
   // Mobile: 'list' | 'chat'
   const [mobileView, setMobileView] = useState('list');
+  const [isComposing, setIsComposing] = useState(false);
+  const [allAlumni, setAllAlumni] = useState([]);
   const location = useLocation();
 
   useEffect(() => {
     const allChats = storage.getChats();
     setChats(allChats);
+
+    // Load potential alumni to message (from admin data or users)
+    const savedAlumni = JSON.parse(localStorage.getItem('alumniData')) || [];
+    // Fallback if alumniData is empty — add some defaults for demo
+    const defaultAlumni = [
+      { id: 101, name: 'Hari', role: 'UIUX Designer', dept: 'CSE' },
+      { id: 102, name: 'Shalini', role: 'Frontend Developer', dept: 'ECE' },
+      { id: 103, name: 'Kumar', role: 'Software Engineer', dept: 'IT' },
+      { id: 104, name: 'Priya Sharma', role: 'SDE-II at Google', dept: 'CSE' }
+    ];
+    const alumniList = savedAlumni.length > 0 ? savedAlumni : defaultAlumni;
+    // Filter out the current user (Bharath K or alumni_1)
+    setAllAlumni(alumniList.filter(a => a.name !== 'Bharath K' && a.id !== 'alumni_1'));
 
     // Deep link handling
     const params = new URLSearchParams(location.search);
@@ -44,6 +60,35 @@ const Messaging = () => {
   const handleSelectChat = (chat) => {
     setActiveChat(chat);
     setMobileView('chat');
+    setIsComposing(false);
+  };
+
+  const handleSelectNewUser = (user) => {
+    // Check if chat already exists
+    const existingChat = chats.find(c =>
+      c.userName.toLowerCase() === user.name.toLowerCase()
+    );
+
+    if (existingChat) {
+      handleSelectChat(existingChat);
+    } else {
+      const newChat = {
+        id: Date.now(),
+        participants: ['alumni_1', user.id.toString()],
+        userName: user.name,
+        userRole: user.role || user.dept || 'Alumni',
+        userInitial: user.name.charAt(0),
+        status: 'offline',
+        messages: []
+      };
+
+      const updatedChats = storage.createChat(newChat);
+      setChats(updatedChats);
+      setActiveChat(newChat);
+      setMobileView('chat');
+    }
+    setIsComposing(false);
+    setSearch('');
   };
 
   const handleSend = () => {
@@ -71,7 +116,7 @@ const Messaging = () => {
       storage.clearConversation(activeChat.id);
       const updatedChat = { ...activeChat, messages: [] };
       setActiveChat(updatedChat);
-      setChats(chats.map(c => c.id === activeChat.id ? updatedChat : c));
+      setChats(prev => prev.map(c => c.id === activeChat.id ? updatedChat : c));
     }
   };
 
@@ -81,13 +126,26 @@ const Messaging = () => {
       storage.deleteConversation(activeChat.id);
       const remainingChats = chats.filter(c => c.id !== activeChat.id);
       setChats(remainingChats);
-      setActiveChat(remainingChats.length > 0 ? remainingChats[0] : null);
-      if (remainingChats.length === 0) setMobileView('list');
+
+      if (remainingChats.length > 0) {
+        setActiveChat(remainingChats[0]);
+      } else {
+        setActiveChat(null);
+        setMobileView('list');
+      }
     }
+  };
+
+  const handleVoiceCall = (chat) => {
+    setCallingChat(chat);
   };
 
   const filteredChats = chats.filter(c =>
     c.userName.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const filteredAlumni = allAlumni.filter(a =>
+    a.name.toLowerCase().includes(search.toLowerCase())
   );
 
   if (loading) return (
@@ -97,30 +155,69 @@ const Messaging = () => {
   );
 
   return (
-    <div className="dashboard-main-bg" style={{ height: 'calc(100vh - 64px)' }}>
-      <div className="container-fluid h-100 px-0 px-md-3 py-0 py-md-3 d-flex" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+    <div className="dashboard-main-bg" style={{ height: 'calc(100vh - 80px)', overflow: 'hidden', position: 'relative' }}>
+      <div className="container-fluid h-100 px-0 px-md-3 py-0 py-md-3 d-flex flex-column" style={{ maxWidth: '1400px', margin: '0 auto' }}>
         <div
-          className="row g-0 flex-grow-1 bg-white rounded-0 rounded-md-3 overflow-hidden w-100"
+          className="row g-0 flex-grow-1 bg-white rounded-0 rounded-md-3 overflow-hidden w-100 m-0"
           style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.10)', border: '1px solid #e0e0e0' }}
         >
 
           {/* ─── LEFT: Chat Sidebar ─── */}
           <div className={`col-12 col-lg-4 d-flex flex-column h-100 ${mobileView === 'chat' ? 'd-none d-lg-flex' : 'd-flex'}`}>
             <ChatSidebar>
-              <ChatSidebar.Header />
+              <ChatSidebar.Header
+                onCompose={() => { setIsComposing(true); setSearch(''); }}
+                isComposing={isComposing}
+                onCancel={() => setIsComposing(false)}
+              />
               <ChatSidebar.Search value={search} onChange={setSearch} />
               <ChatSidebar.List>
-                {filteredChats.length === 0 ? (
-                  <p className="text-muted text-center py-5 small">No conversations found</p>
+                {isComposing ? (
+                  <>
+                    <div className="px-3 py-2 bg-light border-bottom small text-muted">
+                      Select someone to message
+                    </div>
+                    {filteredAlumni.length === 0 ? (
+                      <p className="text-muted text-center py-5 small">No alumni found</p>
+                    ) : (
+                      filteredAlumni.map(user => (
+                        <div
+                          key={user.id}
+                          onClick={() => handleSelectNewUser(user)}
+                          className="d-flex align-items-center gap-3 px-3 py-3 border-bottom"
+                          style={{ cursor: 'pointer' }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f2ef'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <div
+                            className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
+                            style={{ width: '40px', height: '40px', backgroundColor: '#6c757d', fontSize: '1rem' }}
+                          >
+                            {user.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="fw-semibold text-dark" style={{ fontSize: '0.9rem' }}>{user.name}</div>
+                            <div className="text-muted" style={{ fontSize: '0.8rem' }}>{user.role || user.dept}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </>
                 ) : (
-                  filteredChats.map(chat => (
-                    <ChatItem
-                      key={chat.id}
-                      chat={chat}
-                      isActive={activeChat?.id === chat.id}
-                      onClick={() => handleSelectChat(chat)}
-                    />
-                  ))
+                  <>
+                    {filteredChats.length === 0 ? (
+                      <p className="text-muted text-center py-5 small">No conversations found</p>
+                    ) : (
+                      filteredChats.map(chat => (
+                        <ChatItem
+                          key={chat.id}
+                          chat={chat}
+                          isActive={activeChat?.id === chat.id}
+                          onClick={() => handleSelectChat(chat)}
+                        />
+                      ))
+                    )}
+                  </>
                 )}
               </ChatSidebar.List>
             </ChatSidebar>
@@ -135,6 +232,7 @@ const Messaging = () => {
                   onBack={() => setMobileView('list')}
                   onClearChat={handleClearChat}
                   onDeleteChat={handleDeleteChat}
+                  onVoiceCall={handleVoiceCall}
                 />
                 <ChatWindow.Messages messages={activeChat.messages} />
                 <ChatWindow.Input
@@ -152,6 +250,13 @@ const Messaging = () => {
 
         </div>
       </div>
+
+      {callingChat && (
+        <ChatWindow.CallModal
+          chat={callingChat}
+          onEndCall={() => setCallingChat(null)}
+        />
+      )}
     </div>
   );
 };

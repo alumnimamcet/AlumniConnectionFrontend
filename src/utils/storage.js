@@ -31,17 +31,8 @@ const initializeStorage = () => {
             // However, merging might overwrite user changes.
             // For chats, we definitely want to ensure new chats from the JSON are added.
             if (key === STORAGE_KEYS.CHATS) {
-                const existingChats = JSON.parse(existing);
-                const initialChats = initialData;
-                const mergedChats = [...existingChats];
-
-                initialChats.forEach(chat => {
-                    if (!mergedChats.find(c => c.id === chat.id)) {
-                        mergedChats.push(chat);
-                    }
-                });
-
-                localStorage.setItem(key, JSON.stringify(mergedChats));
+                // If it exists, we don't merge from JSON anymore to respect deletions
+                return;
             }
         }
     };
@@ -124,6 +115,13 @@ export const storage = {
         const chats = getCollection(STORAGE_KEYS.CHATS);
         const updatedChats = chats.filter(c => c.id !== chatId);
         saveCollection(STORAGE_KEYS.CHATS, updatedChats);
+    },
+    saveChats: (chats) => saveCollection(STORAGE_KEYS.CHATS, chats),
+    createChat: (chat) => {
+        const chats = getCollection(STORAGE_KEYS.CHATS);
+        const updatedChats = [chat, ...chats];
+        saveCollection(STORAGE_KEYS.CHATS, updatedChats);
+        return updatedChats;
     },
 
     // Notifications
