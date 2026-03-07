@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // Layout Components
 import Navbar from './components/layout/Navbar';
 import BottomNav from './components/layout/BottomNav';
+import { AuthProvider } from './context/AuthContext';
 
 // Page Components
 import HomeScreen from './pages/Home/HomeScreen';
@@ -48,7 +49,11 @@ import './styles/Global.css';
 import './styles/Dashboard.css';
 
 // Initialize persistent storage
-storage.init();
+try {
+  storage.init();
+} catch (e) {
+  console.error('Failed to initialize storage:', e);
+}
 
 function App() {
   return (
@@ -77,26 +82,27 @@ function App() {
             <Route path="/messaging" element={<Messaging />} />
             <Route path="/notifications" element={<Notification />} />
 
-            {/* Admin Routes - Sorted */}
-            <Route path="/admin/home" element={<AdminHome />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/post" element={<AdminPost />} />
-            <Route path="/admin/upcoming-events-list" element={<UpcomingEventsList />} />
-            <Route path="/admin/create-event" element={<CreateEvent />} />
-            <Route path="/admin/job-vacancies" element={<JobVacancyList />} />
-            <Route path="/admin/create-job" element={<CreateJob />} />
-            <Route path="/admin/alumni" element={<AlumniManagement />} />
-            <Route path="/admin/review-application" element={<ReviewApplication />} />
-            <Route path="/admin/verify-success" element={<VerificationSuccess />} />
-            <Route path="/admin/view-profile" element={<ViewProfile />} />
-            <Route path="/admin/job-details" element={<JobDetailsView />} />
-            <Route path="/admin/add-alumni" element={<AddAlumni />} />
-            <Route path="/admin/view-event" element={<ViewEventDetail />} />
-          </Routes>
-        </main>
-        <BottomNav />
-      </div>
-    </Router>
+              {/* Admin Routes - Sorted */}
+              <Route path="/admin/home" element={<AdminHome />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/post" element={<AdminPost />} />
+              <Route path="/admin/upcoming-events-list" element={<UpcomingEventsList />} />
+              <Route path="/admin/create-event" element={<CreateEvent />} />
+              <Route path="/admin/job-vacancies" element={<JobVacancyList />} />
+              <Route path="/admin/create-job" element={<CreateJob />} />
+              <Route path="/admin/alumni" element={<AlumniManagement />} />
+              <Route path="/admin/review-application" element={<ReviewApplication />} />
+              <Route path="/admin/verify-success" element={<VerificationSuccess />} />
+              <Route path="/admin/view-profile" element={<ViewProfile />} />
+              <Route path="/admin/job-details" element={<JobDetailsView />} />
+              <Route path="/admin/add-alumni" element={<AddAlumni />} />
+              <Route path="/admin/view-event" element={<ViewEventDetail />} />
+            </Routes>
+          </main>
+          <BottomNav />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

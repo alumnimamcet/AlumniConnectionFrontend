@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/Auth.css';
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({ adminId: '', password: '', secretKey: '' });
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -12,18 +14,16 @@ const AdminLogin = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Temporary Hardcoded Authentication logic
-    if (
-      credentials.adminId === 'admin@mamcet.com' &&
-      credentials.password === 'admin@123' &&
-      credentials.secretKey === '12345'
-    ) {
-      // Successful login
-      // After successful login
-      navigate('/admin/home'); // This will directly take you to the home page
-    } else {
-      alert('Invalid Admin Credentials or Secret Key!');
-    }
+    // Simplified login for development testing
+    const adminUser = {
+      id: 'admin_1',
+      name: 'Admin User',
+      role: 'Administrator',
+      company: 'MAMCET',
+      profilePic: ''
+    };
+    login(adminUser);
+    navigate('/admin/home');
   };
 
   return (
