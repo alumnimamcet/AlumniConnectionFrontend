@@ -9,9 +9,9 @@ const BottomNav = () => {
     const path = location.pathname;
     const { user } = useAuth();
 
-    const isDashboard = path.startsWith('/alumni') || path.startsWith('/jobs') || path.startsWith('/events') || path.startsWith('/messaging') || path.startsWith('/notifications') || path.startsWith('/profile');
+    const isDashboard = path.startsWith('/admin') || path.startsWith('/alumni') || path.startsWith('/jobs') || path.startsWith('/events') || path.startsWith('/messaging') || path.startsWith('/notifications') || path.startsWith('/profile');
 
-    if (!isDashboard || !user || path.startsWith('/admin')) return null;
+    if (!isDashboard || !user) return null;
 
     const roleKey = getUserRoleKey(user);
     const navItems = navigationConfig[roleKey] || [];
