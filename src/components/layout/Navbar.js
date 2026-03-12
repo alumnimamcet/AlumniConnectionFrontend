@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { navigationConfig, getUserRoleKey } from '../../config/navigationConfig';
-import { FaSignOutAlt, FaSearch } from 'react-icons/fa';
+import { FaSignOutAlt, FaSearch, FaCommentDots } from 'react-icons/fa';
 import '../../styles/Navbar.css';
 
 const Navbar = () => {
@@ -41,24 +41,18 @@ const Navbar = () => {
 
         {/* Brand Logo */}
         <Link className="navbar-brand d-flex align-items-center flex-grow-1 flex-md-grow-0" to={user ? (roleKey === 'admin' ? "/admin/home" : "/alumni/home") : "/"}>
-          <img src="https://res.cloudinary.com/dnby5o1lt/image/upload/v1754489527/ALUMINI_CONNECT_LOGO_hwlrpw.png" alt="Logo" style={{ width: '40px' }} className="me-2 d-none d-sm-inline" />
-          <span className="fw-bold brand-name-red" style={{ color: roleKey === 'admin' ? '#b22222' : '#c84022', letterSpacing: roleKey === 'admin' ? '1px' : '0' }}>
+          <img src="https://res.cloudinary.com/dnby5o1lt/image/upload/v1754489527/ALUMINI_CONNECT_LOGO_hwlrpw.png" alt="Logo" style={{ width: '40px' }} className="me-2 d-none d-lg-inline" />
+          <span className="fw-bold brand-name-red d-none d-lg-inline" style={{ color: roleKey === 'admin' ? '#b22222' : '#c84022', letterSpacing: roleKey === 'admin' ? '1px' : '0' }}>
             {roleKey === 'admin' ? 'ADMIN PANEL' : 'ALUMNI CONNECT'}
           </span>
         </Link>
 
-        {/* Mobile Toggler */}
-        <button
-          className="navbar-toggler border-0 shadow-none ms-auto"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
+        {/* Mobile Messaging Icon */}
+        {user && isDashboard && (
+          <Link to="/messaging" className="d-lg-none ms-auto text-decoration-none me-2" style={{ color: roleKey === 'admin' ? '#b22222' : '#c84022' }}>
+            <FaCommentDots size={24} />
+          </Link>
+        )}
 
         <div className="collapse navbar-collapse justify-content-end text-center mt-3 mt-lg-0" id="navbarNav">
 
