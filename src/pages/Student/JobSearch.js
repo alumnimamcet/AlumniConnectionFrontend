@@ -7,6 +7,7 @@ const JobPostings = () => {
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [isJobDetailsOpen, setIsJobDetailsOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = React.useRef(null);
   const [toast, setToast] = useState(null);
@@ -108,18 +109,10 @@ const JobPostings = () => {
 
                     <div className="d-flex gap-3 mt-2">
                       <button
-                        className={`btn btn-pro ${job.applied ? 'btn-success' : 'btn-pro-primary'} btn-pro-sm px-4`}
-                        onClick={() => { setSelectedJob(job); setIsApplyModalOpen(true); }}
-                        disabled={job.applied}
+                        className="btn btn-pro btn-pro-primary btn-pro-sm px-4"
+                        onClick={() => { setSelectedJob(job); setIsJobDetailsOpen(true); }}
                       >
-                        {job.applied ? 'Already Applied' : 'Apply Now'}
-                      </button>
-                      <button 
-                        className={`btn btn-pro ${job.saved ? 'btn-danger opacity-75' : 'btn-pro-outline'} btn-pro-sm px-4`}
-                        onClick={() => handleSaveJob(job.id)}
-                      >
-                        <i className={`fas fa-bookmark me-2 ${job.saved ? 'text-white' : ''}`}></i>
-                        {job.saved ? 'Unsave' : 'Save Job'}
+                        View Details
                       </button>
                     </div>
                   </div>
@@ -188,6 +181,94 @@ const JobPostings = () => {
           </div>
         </div>
         <p className="extra-small text-muted">Your MAMCET alumni profile will be shared with the recruiter automatically.</p>
+      </Modal>
+
+      {/* JOB DETAILS MODAL */}
+      <Modal
+        isOpen={isJobDetailsOpen}
+        onClose={() => setIsJobDetailsOpen(false)}
+        title="Job Details"
+        footer={
+          <div className="d-flex gap-2 w-100 justify-content-end">
+            <button 
+              className={`btn ${selectedJob?.saved ? 'btn-danger opacity-75' : 'btn-outline-secondary'} rounded-pill px-4 fw-bold`}
+              onClick={() => handleSaveJob(selectedJob?.id)}
+            >
+              <i className={`fas fa-bookmark me-2 ${selectedJob?.saved ? 'text-white' : ''}`}></i>
+              {selectedJob?.saved ? 'Unsave' : 'Save Job'}
+            </button>
+            <button 
+              className={`btn ${selectedJob?.applied ? 'btn-success' : 'btn-mamcet-red'} px-4 rounded-pill fw-bold`}
+              onClick={() => { setIsJobDetailsOpen(false); setIsApplyModalOpen(true); }}
+              disabled={selectedJob?.applied}
+            >
+              {selectedJob?.applied ? 'Already Applied' : 'Apply Now'}
+            </button>
+          </div>
+        }
+      >
+        {selectedJob && (
+          <div className="job-details-content">
+            <div className="d-flex align-items-start gap-3 mb-4 p-3 bg-light rounded-3">
+              <div className="bg-white p-3 rounded shadow-sm">
+                <i className="fas fa-building text-secondary fs-3"></i>
+              </div>
+              <div>
+                <h5 className="fw-bold text-mamcet-red mb-1">{selectedJob.title}</h5>
+                <h6 className="fw-bold text-dark mb-1">{selectedJob.company}</h6>
+                <p className="extra-small text-muted mb-0">
+                  <i className="fas fa-map-marker-alt me-1"></i> {selectedJob.location} &bull; <i className="fas fa-briefcase me-1"></i> {selectedJob.type}
+                </p>
+              </div>
+            </div>
+
+            <div className="row g-3 mb-4">
+              <div className="col-md-6">
+                <div className="p-3 border rounded-3 bg-white h-100">
+                  <p className="extra-small text-muted mb-1 fw-bold">EXPERIENCE</p>
+                  <p className="mb-0 fw-bold">{selectedJob.experience}</p>
+                </div>
+              </div>
+              <div className="col-md-6">
+                <div className="p-3 border rounded-3 bg-white h-100">
+                  <p className="extra-small text-muted mb-1 fw-bold">SALARY</p>
+                  <p className="mb-0 fw-bold text-success">{selectedJob.salary}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <h6 className="fw-bold mb-3 d-flex align-items-center">
+                <span className="bg-mamcet-red rounded-circle p-1 me-2" style={{ width: '8px', height: '8px' }}></span>
+                Job Description
+              </h6>
+              <div className="p-3 bg-white border rounded-3 text-muted" style={{ lineHeight: '1.6' }}>
+                {selectedJob.description}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <h6 className="fw-bold mb-3 d-flex align-items-center">
+                <span className="bg-mamcet-red rounded-circle p-1 me-2" style={{ width: '8px', height: '8px' }}></span>
+                Required Skills
+              </h6>
+              <div className="d-flex flex-wrap gap-2">
+                {selectedJob.skills?.map((skill, idx) => (
+                  <span key={idx} className="badge bg-light text-dark px-3 py-2 border fw-normal rounded-pill">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="extra-small text-muted p-3 bg-light rounded-3">
+              <div className="d-flex justify-content-between mb-1">
+                <span>Posted by: <strong>{selectedJob.postedBy}</strong></span>
+                <span>Posted: <strong>{selectedJob.timestamp}</strong></span>
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* TOAST NOTIFICATION */}
