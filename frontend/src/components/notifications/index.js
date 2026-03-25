@@ -1,16 +1,12 @@
 import React from 'react';
-import { storage } from '../../utils/storage';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/Notification.css';
 
 /**
  * NotificationHeader Component - Top navigation bar with logo, menu, and icons
  */
 export const NotificationHeader = ({ onBack, unreadCount }) => {
-  const [userData, setUserData] = React.useState(null);
-
-  React.useEffect(() => {
-    setUserData(storage.getCurrentUser());
-  }, []);
+  const { user: userData } = useAuth();
 
   return (
     <header className="notification-header">

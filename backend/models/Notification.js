@@ -1,7 +1,10 @@
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  // Primary recipient reference — used for all queries
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  // Semantic alias for clarity (kept in sync via pre-save hook)
+  recipientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
   type: {
     type: String,
     enum: [
@@ -23,6 +26,14 @@ const notificationSchema = new mongoose.Schema({
   date: String,      // for event notifications
 }, {
   timestamps: true
+});
+
+// Keep recipientId in sync with userId automatically
+notificationSchema.pre('save', function (next) {
+  if (this.isModified('userId') || this.isNew) {
+    this.recipientId = this.userId;
+  }
+  next();
 });
 
 module.exports = mongoose.model('Notification', notificationSchema);
