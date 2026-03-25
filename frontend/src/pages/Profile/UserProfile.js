@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { authService } from '../../services/api';
+import { authService, userService } from '../../services/api';
 import Modal from '../../components/common/Modal';
 import Toast from '../../components/common/Toast';
 
@@ -9,8 +9,10 @@ const UserProfile = ({ isHome }) => {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
-    const [uploadingPic, setUploadingPic] = useState(false);
+    const [uploadingPic, setUploadingPic]       = useState(false);
+    const [uploadingBanner, setUploadingBanner] = useState(false);
     const profilePicInputRef = useRef(null);
+    const bannerPicInputRef  = useRef(null);
 
     // Modal states
     const [isEditHeaderOpen, setIsEditHeaderOpen] = useState(false);
@@ -53,7 +55,7 @@ const UserProfile = ({ isHome }) => {
         }
     };
 
-    // ── LinkedIn-style camera icon: upload & update profile pic ────
+    // ── Upload DP via new userService ────────────────────────────────
     const handleProfilePicUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -61,19 +63,39 @@ const UserProfile = ({ isHome }) => {
         try {
             const formData = new FormData();
             formData.append('profilePic', file);
-            const res = await authService.uploadProfilePic(formData);
-            const updatedUser = res.data.user;
-            setUserData(prev => ({ ...prev, profilePic: updatedUser.profilePic }));
-            setEditData(prev => ({ ...prev, profilePic: updatedUser.profilePic }));
-            // Update auth context so navbar avatar & localStorage refresh immediately
-            if (updateUser) updateUser(updatedUser);
-            showToast("Profile picture updated!", "success");
-        } catch (err) {
-            showToast("Failed to upload picture. Please try again.", "error");
+            const res = await userService.uploadDp(formData);
+            const pic = res.data.profilePic;
+            setUserData(prev => ({ ...prev, profilePic: pic }));
+            setEditData(prev => ({ ...prev, profilePic: pic }));
+            if (updateUser) updateUser(res.data.user);
+            showToast('Profile picture updated!', 'success');
+        } catch {
+            showToast('Failed to upload picture. Please try again.', 'error');
         } finally {
             setUploadingPic(false);
-            // Clear the input so the same file can be re-selected if needed
             if (profilePicInputRef.current) profilePicInputRef.current.value = '';
+        }
+    };
+
+    // ── Upload Banner via userService ────────────────────────────────
+    const handleBannerUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setUploadingBanner(true);
+        try {
+            const formData = new FormData();
+            formData.append('bannerPic', file);
+            const res = await userService.uploadBanner(formData);
+            const pic = res.data.bannerPic;
+            setUserData(prev => ({ ...prev, bannerPic: pic }));
+            setEditData(prev => ({ ...prev, bannerPic: pic }));
+            if (updateUser) updateUser(res.data.user);
+            showToast('Banner updated!', 'success');
+        } catch {
+            showToast('Failed to upload banner. Please try again.', 'error');
+        } finally {
+            setUploadingBanner(false);
+            if (bannerPicInputRef.current) bannerPicInputRef.current.value = '';
         }
     };
 
@@ -148,15 +170,61 @@ const UserProfile = ({ isHome }) => {
 
                         {/* LINKEDIN STYLE HEADER */}
                         <div className="dashboard-card bg-white shadow-sm overflow-hidden mb-4 rounded-3 border-0">
-                            <div className="profile-cover-wrapper position-relative" style={{ height: '200px' }}>
-                                <img
-                                    src={userData.coverPic || "https://via.placeholder.com/1200x400"}
-                                    alt="Cover"
-                                    className="w-100 h-100 object-fit-cover"
+                            {/* ── Banner Image with camera overlay ── */}
+                            <div
+                                className="profile-cover-wrapper position-relative"
+                                style={{ height: '200px', backgroundColor: '#c84022', cursor: 'pointer' }}
+                                onClick={() => !uploadingBanner && bannerPicInputRef.current?.click()}
+                                title="Change banner image"
+                            >
+                                {userData.bannerPic ? (
+                                    <img
+                                        src={userData.bannerPic}
+                                        alt="Banner"
+                                        className="w-100 h-100"
+                                        style={{ objectFit: 'cover' }}
+                                    />
+                                ) : (
+                                    <div
+                                        className="w-100 h-100"
+                                        style={{ background: 'linear-gradient(135deg, #c84022 0%, #e85d38 60%, #1a1a2e 100%)' }}
+                                    />
+                                )}
+
+                                {/* Banner camera icon overlay */}
+                                <div
+                                    className="position-absolute d-flex align-items-center justify-content-center gap-2"
+                                    style={{
+                                        bottom: 10, right: 12,
+                                        background: 'rgba(0,0,0,0.45)',
+                                        borderRadius: 20,
+                                        padding: '5px 12px',
+                                        color: '#fff',
+                                        fontSize: 12,
+                                        fontWeight: 600,
+                                        pointerEvents: 'none'
+                                    }}
+                                >
+                                    {uploadingBanner
+                                        ? <div className="spinner-border spinner-border-sm text-white" role="status" />
+                                        : <><i className="fas fa-camera me-1" />Change Banner</>}
+                                </div>
+
+                                {/* Hidden banner file input */}
+                                <input
+                                    ref={bannerPicInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ display: 'none' }}
+                                    onChange={handleBannerUpload}
                                 />
+
+                                {/* Edit intro button (top-right, separate from banner click) */}
                                 <button
                                     className="btn btn-light btn-sm position-absolute top-0 end-0 m-3 shadow-sm rounded-circle"
-                                    onClick={() => setIsEditHeaderOpen(true)}
+                                    style={{ zIndex: 2 }}
+                                    onClick={(e) => { e.stopPropagation(); setIsEditHeaderOpen(true); }}
+                                    title="Edit intro"
                                 >
                                     <i className="fas fa-pencil-alt text-mamcet-red"></i>
                                 </button>
@@ -379,8 +447,9 @@ const UserProfile = ({ isHome }) => {
                         </div>
                     </div>
                     <div className="col-12">
-                        <label className="form-label extra-small fw-bold">Cover Photo URL</label>
-                        <input type="text" className="form-control" name="coverPic" value={editData.coverPic || ""} onChange={handleChange} />
+                        <label className="form-label extra-small fw-bold">Banner Image</label>
+                        <p className="extra-small text-muted mb-1">Click the banner area on your profile to upload a new banner photo directly.</p>
+                        <input type="text" className="form-control" name="bannerPic" value={editData.bannerPic || ''} onChange={handleChange} placeholder="Or paste an image URL here" />
                     </div>
                 </div>
             </Modal>

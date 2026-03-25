@@ -26,11 +26,11 @@ export const navigationConfig = {
         { path: '/messaging', icon: FaCommentDots, label: 'Inbox' }
     ],
     student: [
-        { path: '/alumni/home', icon: FaHome, label: 'Home' },
-        { path: '/student/JobSearch', icon: FaBriefcase, label: 'Jobs' },
-        { path: '/student/StudentEvents', icon: FaCalendarAlt, label: 'Events' },
-        { path: '/notifications', icon: FaBell, label: 'Notifications' },
-        { path: '/messaging', icon: FaCommentDots, label: 'Messaging' }
+        { path: '/student/home',           icon: FaHome,        label: 'Home'          },
+        { path: '/Student/JobSearch',      icon: FaBriefcase,   label: 'Jobs'          },
+        { path: '/student/StudentEvents',  icon: FaCalendarAlt, label: 'Events'        },
+        { path: '/notifications',          icon: FaBell,        label: 'Notifications' },
+        { path: '/messaging',              icon: FaCommentDots, label: 'Messaging'     }
     ],
     guest: [
         { path: '/about', icon: FaInfoCircle, label: 'About' },

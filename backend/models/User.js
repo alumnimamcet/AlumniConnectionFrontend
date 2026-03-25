@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema({
   // Profile
   bio: String,
   profilePic: { type: String, default: '' },
-  coverPic: { type: String, default: '' },
+  bannerPic: { type: String, default: '' },
   city: String,
   state: String,
   zipCode: String,

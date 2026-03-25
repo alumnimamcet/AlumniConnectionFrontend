@@ -85,6 +85,7 @@ io.on('connection', (socket) => {
 
 // ─── Routes (must come AFTER io is attached to app) ──────────
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/users'));
 app.use('/api/posts', require('./routes/posts'));
 app.use('/api/jobs', require('./routes/jobs'));
 app.use('/api/events', require('./routes/events'));
