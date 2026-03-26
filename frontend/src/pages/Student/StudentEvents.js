@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { storage } from '../../utils/storage';
 import Modal from '../../components/common/Modal';
 import Toast from '../../components/common/Toast';
+import { eventService } from '../../services/api';
 const Events = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,8 +12,17 @@ const Events = () => {
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    setEvents(storage.getEvents());
-    setLoading(false);
+    const fetchEvents = async () => {
+      try {
+        const res = await eventService.getEvents();
+        setEvents(res.data?.data || []);
+      } catch (err) {
+        showToast("Failed to fetch events from server.", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
   }, []);
 
   const showToast = (message, type = 'success') => {
@@ -21,16 +31,16 @@ const Events = () => {
 
   const handleRegister = (eventId) => {
     const updatedEvents = events.map(event => {
-      if (event.id === eventId) {
+      const id = event._id || event.id;
+      if (id === eventId) {
         return { ...event, registered: !event.registered };
       }
       return event;
     });
     setEvents(updatedEvents);
-    storage.saveEvents(updatedEvents);
     setIsRegisterModalOpen(false);
     setIsDetailModalOpen(false);
-    const event = updatedEvents.find(e => e.id === eventId);
+    const event = updatedEvents.find(e => (e._id || e.id) === eventId);
     showToast(event.registered ? "Registration successful!" : "Registration cancelled.");
   };
 
@@ -45,7 +55,7 @@ const Events = () => {
 
         <div className="row g-4 justify-content-center">
           {events.map(event => (
-            <div key={event.id} className="col-md-4">
+            <div key={event._id || event.id} className="col-md-4">
               <div className="dashboard-card bg-white shadow-sm border-0 rounded-3 overflow-hidden h-100 d-flex flex-column">
                 <div className="event-img-wrapper" style={{ height: '180px' }}>
                   <img src={event.image || "https://via.placeholder.com/600x300"} alt={event.title} className="w-100 h-100 object-fit-cover" />
@@ -122,7 +132,7 @@ const Events = () => {
         onClose={() => setIsRegisterModalOpen(false)}
         title={selectedEvent?.registered ? "Cancel Registration" : "Event Registration"}
         footer={
-          <button className={`btn ${selectedEvent?.registered ? 'btn-outline-danger' : 'btn-mamcet-red'} px-4 rounded-pill fw-bold`} onClick={() => handleRegister(selectedEvent.id)}>
+          <button className={`btn ${selectedEvent?.registered ? 'btn-outline-danger' : 'btn-mamcet-red'} px-4 rounded-pill fw-bold`} onClick={() => handleRegister(selectedEvent._id || selectedEvent.id)}>
             {selectedEvent?.registered ? "Confirm Cancellation" : "Confirm Registration"}
           </button>
         }

@@ -79,34 +79,34 @@ function App() {
 
               {/* ── Protected: Any Authenticated User ─────────────────── */}
               <Route element={<ProtectedRoute />}>
-                <Route path="/alumni/home" element={<AlumniDashboard />} />
-                <Route path="/alumni/profile" element={<UserProfile />} />
-                <Route path="/jobs" element={<JobPostings />} />
-                <Route path="/Student/JobSearch" element={<JobSearch />} />
-                <Route path="/student/StudentEvents" element={<StudentEvents />} />
-                <Route path="/events" element={<Events />} />
-                <Route path="/messaging" element={<Messaging />} />
-                <Route path="/notifications" element={<Notification />} />
+                <Route path="/alumni/home/:userId" element={<AlumniDashboard />} />
+                <Route path="/alumni/profile/:userId" element={<UserProfile />} />
+                <Route path="/jobs/:userId" element={<JobPostings />} />
+                <Route path="/Student/JobSearch/:userId" element={<JobSearch />} />
+                <Route path="/student/StudentEvents/:userId" element={<StudentEvents />} />
+                <Route path="/events/:userId" element={<Events />} />
+                <Route path="/messaging/:userId" element={<Messaging />} />
+                <Route path="/notifications/:userId" element={<Notification />} />
               </Route>
 
               {/* ── Protected: Admin Only ────────────────────────────── */}
               <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-                <Route path="/admin/home" element={<AlumniDashboard />} />
-                <Route path="/admin/profile" element={<UserProfile />} />
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/post" element={<AdminPost />} />
-                <Route path="/admin/upcoming-events-list" element={<UpcomingEventsList />} />
-                <Route path="/admin/create-event" element={<CreateEvent />} />
-                <Route path="/admin/job-vacancies" element={<JobVacancyList />} />
-                <Route path="/admin/create-job" element={<CreateJob />} />
-                <Route path="/admin/alumni" element={<AlumniManagement />} />
-                <Route path="/admin/review-application" element={<ReviewApplication />} />
-                <Route path="/admin/verify-success" element={<VerificationSuccess />} />
-                <Route path="/admin/view-profile" element={<ViewProfile />} />
-                <Route path="/admin/job-details" element={<JobDetailsView />} />
-                <Route path="/admin/add-alumni" element={<AddAlumni />} />
-                <Route path="/admin/view-event" element={<ViewEventDetail />} />
-                <Route path="/admin/approvals" element={<AdminApprovals />} />
+                <Route path="/admin/home/:userId" element={<AlumniDashboard />} />
+                <Route path="/admin/profile/:userId" element={<UserProfile />} />
+                <Route path="/admin/dashboard/:userId" element={<AdminDashboard />} />
+                <Route path="/admin/post/:userId" element={<AdminPost />} />
+                <Route path="/admin/upcoming-events-list/:userId" element={<UpcomingEventsList />} />
+                <Route path="/admin/create-event/:userId" element={<CreateEvent />} />
+                <Route path="/admin/job-vacancies/:userId" element={<JobVacancyList />} />
+                <Route path="/admin/create-job/:userId" element={<CreateJob />} />
+                <Route path="/admin/alumni/:userId" element={<AlumniManagement />} />
+                <Route path="/admin/review-application/:userId" element={<ReviewApplication />} />
+                <Route path="/admin/verify-success/:userId" element={<VerificationSuccess />} />
+                <Route path="/admin/view-profile/:userId" element={<ViewProfile />} />
+                <Route path="/admin/job-details/:userId" element={<JobDetailsView />} />
+                <Route path="/admin/add-alumni/:userId" element={<AddAlumni />} />
+                <Route path="/admin/view-event/:userId" element={<ViewEventDetail />} />
+                <Route path="/admin/approvals/:userId" element={<AdminApprovals />} />
               </Route>
 
             </Routes>

@@ -17,7 +17,11 @@ const postStorage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, postsDir),
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
+        let ext = path.extname(file.originalname);
+        if (!ext && file.mimetype) {
+            ext = '.' + file.mimetype.split('/')[1].replace('jpeg', 'jpg');
+        }
+        cb(null, uniqueSuffix + ext);
     }
 });
 
@@ -31,7 +35,11 @@ const profileStorage = multer.diskStorage({
         // Use userId in filename for easy identification & overwrite-style naming
         const userId = req.user?._id?.toString() || 'unknown';
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, `profile-${userId}-${uniqueSuffix}${path.extname(file.originalname)}`);
+        let ext = path.extname(file.originalname);
+        if (!ext && file.mimetype) {
+            ext = '.' + file.mimetype.split('/')[1].replace('jpeg', 'jpg');
+        }
+        cb(null, `profile-${userId}-${uniqueSuffix}${ext}`);
     }
 });
 

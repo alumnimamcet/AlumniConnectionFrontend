@@ -24,7 +24,7 @@ const AdminLogin = () => {
       const res = await authService.login(credentials.email, credentials.password, 'admin');
       const { user, token } = res.data;
       login(user, token);
-      navigate('/admin/home');
+      navigate(`/admin/home/${user._id || user.id}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Invalid credentials or role.');
     } finally {

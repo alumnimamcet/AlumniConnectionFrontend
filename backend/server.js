@@ -105,8 +105,10 @@ app.use((err, req, res, next) => {
 // ─── Database & Server Start ──────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
+const isLocal = process.env.MONGO_URI?.includes('localhost') || process.env.MONGO_URI?.includes('127.0.0.1');
+
 mongoose.connect(process.env.MONGO_URI, {
-  tls: true,
+  tls: !isLocal && process.env.MONGO_URI?.startsWith('mongodb+srv'),
   tlsAllowInvalidCertificates: false,
   serverSelectionTimeoutMS: 10000,
   socketTimeoutMS: 45000,

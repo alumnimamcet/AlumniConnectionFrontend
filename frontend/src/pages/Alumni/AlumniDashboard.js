@@ -101,7 +101,7 @@ const CreatePostBox = ({ user, onPostCreated, showToast }) => {
     try {
       const formData = new FormData();
       formData.append('content', postText);
-      if (imageFile) formData.append('image', imageFile);
+      if (imageFile) formData.append('image', imageFile, imageFile.name || 'image.jpg');
 
       const res = await postService.createPost(formData);
       onPostCreated(res.data.data);

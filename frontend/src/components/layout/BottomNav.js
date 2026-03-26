@@ -21,12 +21,13 @@ const BottomNav = () => {
     return (
         <div className="bottom-nav d-lg-none shadow-lg border-top fixed-bottom bg-white d-flex justify-content-around align-items-center py-2" style={{ height: '60px' }}>
             {navItems.map((item) => {
+                const itemPath = `${item.path}/${user?._id || user?.id}`;
                 const IconComponent = item.icon;
-                const isActive = path === item.path;
+                const isActive = path === itemPath;
                 return (
                     <Link
                         key={item.path}
-                        to={item.path}
+                        to={itemPath}
                         className="nav-item text-center text-decoration-none d-flex flex-column align-items-center"
                         style={{ color: isActive ? '#c84022' : '#6c757d', minWidth: '44px' }}
                     >

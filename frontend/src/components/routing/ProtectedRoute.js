@@ -29,8 +29,8 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
 
     // Role check
     if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
-        if (userRole === 'admin') return <Navigate to="/admin/home" replace />;
-        return <Navigate to="/alumni/home" replace />;
+        if (userRole === 'admin') return <Navigate to={`/admin/home/${user._id || user.id}`} replace />;
+        return <Navigate to={`/alumni/home/${user._id || user.id}`} replace />;
     }
 
     return <Outlet />;
