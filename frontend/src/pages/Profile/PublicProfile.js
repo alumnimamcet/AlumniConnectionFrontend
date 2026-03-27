@@ -256,7 +256,7 @@ const PublicProfile = () => {
                   {/* Action buttons */}
                   <div className="d-flex gap-2 flex-wrap">
                     {isOwnProfile ? (
-                      <Link to="/alumni/profile" className="btn btn-pro-outline rounded-pill px-4 fw-bold" style={{ fontSize: 14 }}>
+                      <Link to={`/alumni/profile/${me?._id || me?.id}`} className="btn btn-pro-outline rounded-pill px-4 fw-bold" style={{ fontSize: 14 }}>
                         Edit Profile
                       </Link>
                     ) : (

@@ -21,7 +21,7 @@ const AlumniLogin = () => {
       const res = await authService.login(email, password, 'alumni');
       const { user, token } = res.data;
       login(user, token);
-      navigate('/alumni/home');
+      navigate(`/alumni/home/${user._id || user.id}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {

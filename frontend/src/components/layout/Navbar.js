@@ -66,7 +66,7 @@ const Navbar = () => {
 
   const brandColor     = roleKey === 'admin' ? '#b22222' : '#c84022';
   const brandLabel     = roleKey === 'admin' ? 'ADMIN PANEL' : 'ALUMNI CONNECT';
-  const dashboardHome  = roleKey === 'admin' ? '/admin/home' : '/alumni/home';
+  const dashboardHome  = roleKey === 'admin' ? `/admin/home/${user?._id || user?.id}` : `/alumni/home/${user?._id || user?.id}`;
   const dashboardItems = navigationConfig[userRole] || [];
 
   /* ─────────────────────────────────────────────────────────── *
@@ -160,12 +160,13 @@ const Navbar = () => {
         {user && isDashboard && (
           <div className="d-none d-lg-flex align-items-center gap-3">
             {dashboardItems.map(item => {
+              const itemPath = `${item.path}/${user?._id || user?.id}`;
               const Icon     = item.icon;
-              const isActive = path === item.path || path.startsWith(item.path + '/');
+              const isActive = path === itemPath || path.startsWith(itemPath + '/');
               return (
                 <Link
                   key={item.path}
-                  to={item.path}
+                  to={itemPath}
                   className="d-flex flex-column align-items-center text-decoration-none"
                   style={{
                     color: isActive ? '#b22222' : '#555',
@@ -205,7 +206,7 @@ const Navbar = () => {
         {user && isDashboard && (
           <div className="d-lg-none d-flex align-items-center gap-2">
             <Link
-              to="/messaging"
+              to={`/messaging/${user?._id || user?.id}`}
               className="text-decoration-none"
               style={{ color: brandColor }}
             >

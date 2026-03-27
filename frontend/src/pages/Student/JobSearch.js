@@ -122,7 +122,7 @@ const JobPostings = () => {
                       <div className="row g-2 extra-small mb-0">
                         <div className="col-6"><strong>Exp:</strong> {job.experience}</div>
                         <div className="col-6"><strong>Salary:</strong> {job.salary}</div>
-                        <div className="col-12 mt-2"><strong>Posted by:</strong> {job.postedBy}</div>
+                        <div className="col-12 mt-2"><strong>Posted by:</strong> {job.postedByName || 'Alumni Connect'}</div>
                       </div>
                     </div>
 
@@ -282,7 +282,7 @@ const JobPostings = () => {
 
             <div className="extra-small text-muted p-3 bg-light rounded-3">
               <div className="d-flex justify-content-between mb-1">
-                <span>Posted by: <strong>{selectedJob.postedBy}</strong></span>
+                <span>Posted by: <strong>{selectedJob.postedByName || 'Alumni Connect'}</strong></span>
                 <span>Posted: <strong>{selectedJob.timestamp}</strong></span>
               </div>
             </div>

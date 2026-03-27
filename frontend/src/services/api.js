@@ -3,7 +3,6 @@ import axios from 'axios';
 // ─── Axios Instance ───────────────────────────────────────────
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
-  headers: { 'Content-Type': 'application/json' }
 });
 
 // ─── Request Interceptor: Attach JWT ─────────────────────────
@@ -53,9 +52,7 @@ export const authService = {
 
   // Upload profile picture as multipart/form-data
   uploadProfilePic: (formData) =>
-    api.put('/auth/profile-pic', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    api.put('/auth/profile-pic', formData)
 };
 
 // ─── User Upload Service ───────────────────────────────────────

@@ -96,8 +96,8 @@ const Notification = () => {
       <div className="container" style={{ maxWidth: '800px' }}>
 
         {/* Page Header */}
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h2 className="fw-bold mb-0" style={{ color: '#c84022' }}>
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <h2 className="fw-bold mb-0" style={{ color: '#c84022', fontSize: 'clamp(1.25rem, 5vw, 1.75rem)' }}>
             Notifications
             {unreadCount > 0 && (
               <span className="badge ms-2 fw-bold" style={{ backgroundColor: '#c84022', borderRadius: '12px', fontSize: '0.65rem', verticalAlign: 'middle' }}>
@@ -105,26 +105,15 @@ const Notification = () => {
               </span>
             )}
           </h2>
-          <div className="d-flex gap-2">
-            {unreadCount > 0 && (
-              <button
-                className="btn rounded-pill px-4 flex-shrink-0"
-                style={{ border: '1.5px solid #333', color: '#333', backgroundColor: 'transparent', fontWeight: 600, fontSize: '0.9rem' }}
-                onClick={handleMarkAllRead}
-              >
-                Mark All Read
-              </button>
-            )}
-            {notifications.length > 0 && (
-              <button
-                className="btn btn-outline-danger rounded-pill px-4 flex-shrink-0"
-                style={{ fontWeight: 600, fontSize: '0.9rem' }}
-                onClick={handleClearAll}
-              >
-                <i className="fas fa-check-double me-2"></i>Mark All Read
-              </button>
-            )}
-          </div>
+          {unreadCount > 0 && (
+            <button
+              className="btn btn-outline-danger rounded-pill px-3 py-1 flex-shrink-0"
+              style={{ fontWeight: 600, fontSize: '0.85rem' }}
+              onClick={handleMarkAllRead}
+            >
+              <i className="fas fa-check-double me-2"></i>Mark All Read
+            </button>
+          )}
         </div>
 
         {/* Search Bar */}
