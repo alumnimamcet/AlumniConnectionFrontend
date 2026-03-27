@@ -55,6 +55,24 @@ export const authService = {
     api.put('/auth/profile-pic', formData)
 };
 
+// ─── User Upload Service ───────────────────────────────────────
+export const userService = {
+  // Upload / replace profile picture (DP)
+  uploadDp: (formData) =>
+    api.put('/users/upload-dp', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+
+  // Upload / replace banner image
+  uploadBanner: (formData) =>
+    api.put('/users/upload-banner', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+
+  // Fetch any user's public profile
+  getById: (userId) => api.get(`/users/${userId}`)
+};
+
 // ─── Post / Feed Service ──────────────────────────────────────
 export const postService = {
   getFeed: () => api.get('/posts'),

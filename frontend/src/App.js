@@ -21,18 +21,26 @@ import StudentLogin from './pages/Auth/StudentLogin';
 import AlumniLogin from './pages/Auth/AlumniLogin';
 import AdminLogin from './pages/Auth/AdminLogin';
 
-// Unified Authenticated Components
-import AlumniDashboard from './pages/Alumni/AlumniDashboard';
-import UserProfile from './pages/Profile/UserProfile';
+// Public profile (viewable by anyone logged in)
 import PublicProfile from './pages/Profile/PublicProfile';
+import UserProfile from './pages/Profile/UserProfile';
+
+// ── Role-Specific Dashboards ──────────────────────────────────
+import AlumniDashboard from './pages/Alumni/AlumniDashboard';
+import StudentDashboard from './pages/Student/StudentDashboard';
+import AdminHome from './pages/Admin/AdminHome';
+
+// ── Shared Protected Pages (all authenticated roles) ─────────
 import JobPostings from './pages/Home/JobPostings';
 import Events from './pages/Home/Events';
 import Messaging from './pages/Home/Messaging';
 import Notification from './pages/Home/Notification';
+
+// ── Student Pages ─────────────────────────────────────────────
 import JobSearch from './pages/Student/JobSearch';
 import StudentEvents from './pages/Student/StudentEvents';
 
-// Admin Components
+// ── Admin Pages ───────────────────────────────────────────────
 import AdminPost from './pages/Admin/AdminPost';
 import UpcomingEventsList from './pages/Admin/UpcomingEventsList';
 import JobVacancyList from './pages/Admin/JobVacancyList';
@@ -60,14 +68,14 @@ function App() {
           <Navbar />
           <main className="flex-grow-1 pb-lg-0 pb-5 mb-3 mb-lg-0">
             <Routes>
-              {/* ── Fully Public Routes ───────────────────────────────── */}
+              {/* ── Fully Public Routes ───────────────────────────── */}
               <Route path="/" element={<HomeScreen />} />
               <Route path="/about" element={<AboutUs />} />
               <Route path="/contact" element={<ContactUs />} />
               <Route path="/success" element={<ResponseSubmitted />} />
               <Route path="/profile/:id" element={<PublicProfile />} />
 
-              {/* ── Auth Routes ──────────────────────────────────────── */}
+              {/* ── Auth Routes ───────────────────────────────────── */}
               <Route path="/register" element={<RoleSelection />} />
               <Route path="/signup/student" element={<StudentSignUp />} />
               <Route path="/signup/alumni" element={<AlumniSignUp />} />
@@ -89,7 +97,7 @@ function App() {
                 <Route path="/notifications/:userId" element={<Notification />} />
               </Route>
 
-              {/* ── Protected: Admin Only ────────────────────────────── */}
+              {/* ── Protected: Admin Only ─────────────────────────── */}
               <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                 <Route path="/admin/home/:userId" element={<AlumniDashboard />} />
                 <Route path="/admin/profile/:userId" element={<UserProfile />} />
@@ -107,6 +115,16 @@ function App() {
                 <Route path="/admin/add-alumni/:userId" element={<AddAlumni />} />
                 <Route path="/admin/view-event/:userId" element={<ViewEventDetail />} />
                 <Route path="/admin/approvals/:userId" element={<AdminApprovals />} />
+              </Route>
+
+              {/* ── Protected: Any Authenticated User ─────────────── */}
+              {/* (shared pages accessible to all roles) */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/alumni/profile" element={<UserProfile />} />
+                <Route path="/jobs" element={<JobPostings />} />
+                <Route path="/events" element={<Events />} />
+                <Route path="/messaging" element={<Messaging />} />
+                <Route path="/notifications" element={<Notification />} />
               </Route>
 
             </Routes>
