@@ -10,35 +10,40 @@ const LOGO_URL =
   'https://res.cloudinary.com/dnby5o1lt/image/upload/v1754489527/ALUMINI_CONNECT_LOGO_hwlrpw.png';
 
 // ─── tiny reusable avatar ─────────────────────────────────────
-const Avatar = ({ user, size = 38 }) => (
-  <div
-    style={{
-      width: size,
-      height: size,
-      borderRadius: '50%',
-      overflow: 'hidden',
-      backgroundColor: '#eee',
-      flexShrink: 0,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      border: '2px solid #fff',
-      boxShadow: '0 1px 4px rgba(0,0,0,.15)',
-    }}
-  >
-    {user?.profilePic ? (
-      <img
-        src={user.profilePic}
-        alt="Profile"
-        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-      />
-    ) : (
-      <span style={{ fontWeight: 700, fontSize: size * 0.4, color: '#c84022' }}>
-        {user?.name?.[0]?.toUpperCase() || '?'}
-      </span>
-    )}
-  </div>
-);
+const Avatar = ({ user, size = 38 }) => {
+  const { resolveImageUrl } = useAuth();
+  const picUrl = resolveImageUrl(user?.profilePic || '');
+
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        backgroundColor: '#eee',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '2px solid #fff',
+        boxShadow: '0 1px 4px rgba(0,0,0,.15)',
+      }}
+    >
+      {picUrl ? (
+        <img
+          src={picUrl}
+          alt="Profile"
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      ) : (
+        <span style={{ fontWeight: 700, fontSize: size * 0.4, color: '#c84022' }}>
+          {user?.name?.[0]?.toUpperCase() || '?'}
+        </span>
+      )}
+    </div>
+  );
+};
 
 // ─── component ───────────────────────────────────────────────
 const Navbar = () => {

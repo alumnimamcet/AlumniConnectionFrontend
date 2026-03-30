@@ -60,13 +60,22 @@ export const AuthProvider = ({ children }) => {
     return 'alumni';
   }, [user]);
 
+  // ── Resolve any image URL to absolute (handles relative paths) ─
+  const resolveImageUrl = useCallback((url) => {
+    if (!url || !url.trim()) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const base = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+    return `${base}${url}`;
+  }, []);
+
   const contextValue = useMemo(() => ({
     user,
     userRole,
     login,
     logout,
-    updateUser
-  }), [user, userRole, login, logout, updateUser]);
+    updateUser,
+    resolveImageUrl
+  }), [user, userRole, login, logout, updateUser, resolveImageUrl]);
 
   if (loading) {
     return (

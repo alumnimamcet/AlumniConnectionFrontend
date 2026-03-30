@@ -6,6 +6,7 @@ const Notification = require('../models/Notification');
 const { sendOTPEmail, sendApprovalEmail } = require('../services/emailService');
 const { protect } = require('../middleware/auth');
 const { profileUpload } = require('../middleware/upload');
+const { getFileUrl, getUploadPath } = require('../utils/urlHelper');
 
 const router = express.Router();
 
@@ -301,7 +302,7 @@ router.put('/profile-pic', protect, profileUpload.single('profilePic'), async (r
       return res.status(400).json({ message: 'No image file provided.' });
     }
 
-    const imageUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/uploads/profiles/${req.file.filename}`;
+    const imageUrl = getFileUrl(getUploadPath('profile', req.file.filename));
 
     const user = await User.findByIdAndUpdate(
       req.user._id,

@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-// Resolve the base backend URL from any env var that might be set
-const BACKEND_URL = (() => {
-    const api = process.env.REACT_APP_API_URL;
-    if (api) return api.replace(/\/api\/?$/, '');
-    if (process.env.REACT_APP_BACKEND_URL) return process.env.REACT_APP_BACKEND_URL;
-    return 'http://localhost:5000';
-})();
+// Unified media URL resolver — handles absolute URLs, relative paths, and missing env vars
+const resolveMediaUrl = (url) => {
+    if (!url || !url.trim()) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const base = process.env.REACT_APP_BACKEND_URL ||
+                 (process.env.REACT_APP_API_URL || '').replace(/\/api\/?$/, '') ||
+                 'http://localhost:5000';
+    return `${base}${url}`;
+};
 
 const FeedItem = ({ post, onLike, onComment, onShare }) => {
     const [showComments, setShowComments] = useState(false);
@@ -28,9 +30,7 @@ const FeedItem = ({ post, onLike, onComment, onShare }) => {
 
     // ── Build image URL (handles absolute URLs and relative /uploads/... paths) ──
     const rawMedia = post.media || post.imageURL || post.image;
-    const mediaUrl = rawMedia && rawMedia.trim()
-        ? rawMedia.startsWith('http') ? rawMedia : `${BACKEND_URL}${rawMedia}`
-        : null;
+    const mediaUrl = resolveMediaUrl(rawMedia);
 
     // ── Timestamp ──
     const timeAgo = (dateStr) => {

@@ -144,6 +144,18 @@ const UserProfile = ({ isHome }) => {
 
     const isStudent = userRole === 'student';
 
+    // Resolve URLs — handles both full https:// URLs and legacy /uploads/... relative paths
+    const BACKEND = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+    const resolvedProfilePic = userData.profilePic?.startsWith('http')
+        ? userData.profilePic
+        : userData.profilePic ? `${BACKEND}${userData.profilePic}` : null;
+    const resolvedBannerPic = userData.bannerPic?.startsWith('http')
+        ? userData.bannerPic
+        : userData.bannerPic ? `${BACKEND}${userData.bannerPic}` : null;
+    const resolvedEditProfilePic = editData.profilePic?.startsWith('http')
+        ? editData.profilePic
+        : editData.profilePic ? `${BACKEND}${editData.profilePic}` : null;
+
     if (isHome && userRole === 'admin') {
         return (
             <div style={{ backgroundColor: '#fff', minHeight: '100vh' }}>
@@ -177,9 +189,9 @@ const UserProfile = ({ isHome }) => {
                                 onClick={() => !uploadingBanner && bannerPicInputRef.current?.click()}
                                 title="Change banner image"
                             >
-                                {userData.bannerPic ? (
+                            {resolvedBannerPic ? (
                                     <img
-                                        src={userData.bannerPic}
+                                        src={resolvedBannerPic}
                                         alt="Banner"
                                         className="w-100 h-100"
                                         style={{ objectFit: 'cover' }}
@@ -253,8 +265,8 @@ const UserProfile = ({ isHome }) => {
                                 onClick={() => !uploadingPic && profilePicInputRef.current?.click()}
                                 title="Change profile picture"
                             >
-                                {userData.profilePic ? (
-                                    <img src={userData.profilePic} alt="Profile" className="w-100 h-100 object-fit-cover" />
+                                {resolvedProfilePic ? (
+                                    <img src={resolvedProfilePic} alt="Profile" className="w-100 h-100 object-fit-cover" />
                                 ) : (userData.name?.[0] || "?")}
 
                                 {/* Camera icon overlay */}
@@ -432,8 +444,8 @@ const UserProfile = ({ isHome }) => {
                         <label className="form-label extra-small fw-bold">Profile Picture</label>
                         <div className="d-flex align-items-center gap-3">
                             <div className="rounded-circle overflow-hidden border" style={{ width: '56px', height: '56px', flexShrink: 0, backgroundColor: '#f8f9fa' }}>
-                                {editData.profilePic ? (
-                                    <img src={editData.profilePic} alt="Current" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                {resolvedEditProfilePic ? (
+                                    <img src={resolvedEditProfilePic} alt="Current" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
                                     <div className="d-flex align-items-center justify-content-center w-100 h-100 fw-bold" style={{ color: '#c84022', fontSize: '1.4rem' }}>
                                         {editData.name?.[0] || '?'}

@@ -1,6 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 const ProfileCard = ({ user }) => {
+    const picUrl = user?.profilePic?.startsWith('http')
+        ? user.profilePic
+        : user?.profilePic
+            ? `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}${user.profilePic}`
+            : null;
+
     return (
         <div className="dashboard-card bg-white shadow-sm overflow-hidden mb-4 rounded-3 border-0">
             <div className="profile-card-header bg-mamcet-red" style={{ height: '60px' }}></div>
@@ -8,8 +14,8 @@ const ProfileCard = ({ user }) => {
                 <Link to={`/profile/${user?._id || user?.id}`} className="text-decoration-none">
                     <div className="avatar-md mx-auto bg-white border rounded-circle d-flex align-items-center justify-content-center shadow-sm"
                         style={{ width: '72px', height: '72px', overflow: 'hidden' }}>
-                        {user?.profilePic ? (
-                            <img src={user.profilePic} alt={user.name} className="w-100 h-100 object-fit-cover" />
+                        {picUrl ? (
+                            <img src={picUrl} alt={user.name} className="w-100 h-100 object-fit-cover" />
                         ) : (
                             <span className="fs-3 fw-bold text-mamcet-red">{user?.name?.[0] || "?"}</span>
                         )}

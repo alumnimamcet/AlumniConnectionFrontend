@@ -2,6 +2,7 @@ const express = require('express');
 const Post = require('../models/Post');
 const { protect, optionalAuth } = require('../middleware/auth');
 const { postUpload: upload } = require('../middleware/upload');
+const { getFileUrl, getUploadPath } = require('../utils/urlHelper');
 
 const router = express.Router();
 
@@ -38,7 +39,7 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
     let mediaUrl = req.body.media || '';
 
     if (req.file) {
-      mediaUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/uploads/posts/${req.file.filename}`;
+      mediaUrl = getFileUrl(getUploadPath('post', req.file.filename));
     }
 
     if (!content?.trim() && !mediaUrl) {

@@ -3,6 +3,7 @@ const path = require('path');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 const { profileUpload, bannerUpload } = require('../middleware/upload');
+const { getFileUrl, getUploadPath } = require('../utils/urlHelper');
 
 const router = express.Router();
 
@@ -18,8 +19,9 @@ router.put(
                 return res.status(400).json({ message: 'No image file provided.' });
             }
 
-            // Build a URL-friendly path relative to the server root
-            const filePath = `/uploads/profiles/${req.file.filename}`;
+            // Build full absolute URL via urlHelper so deployed HTTPS frontends never get mixed-content errors.
+            // IMPORTANT: Set BACKEND_URL in Railway/Render dashboard (e.g. https://your-app.railway.app).
+            const filePath = getFileUrl(getUploadPath('profile', req.file.filename));
 
             const user = await User.findByIdAndUpdate(
                 req.user._id,
@@ -54,7 +56,8 @@ router.put(
                 return res.status(400).json({ message: 'No image file provided.' });
             }
 
-            const filePath = `/uploads/banners/${req.file.filename}`;
+            // IMPORTANT: Set BACKEND_URL in Railway/Render dashboard.
+            const filePath = getFileUrl(getUploadPath('banner', req.file.filename));
 
             const user = await User.findByIdAndUpdate(
                 req.user._id,
