@@ -5,8 +5,8 @@ import toast from 'react-hot-toast';
 import { ClipLoader } from 'react-spinners';
 import { FiCheck, FiX, FiUser, FiBriefcase, FiCalendar, FiRefreshCw } from 'react-icons/fi';
 
-const AdminApprovals = () => {
-  const [activeTab, setActiveTab] = useState('alumni');
+const AdminApprovals = ({ defaultTab = 'alumni' }) => {
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [pendingAlumni, setPendingAlumni] = useState([]);
   const [pendingJobs, setPendingJobs] = useState([]);
   const [pendingEvents, setPendingEvents] = useState([]);

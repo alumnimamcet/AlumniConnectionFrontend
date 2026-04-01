@@ -45,6 +45,8 @@ const userSchema = new mongoose.Schema({
   batch: String,
   department: String,
   degree: String,
+  graduationYear: String,   // Expected graduation year (student) / pass-out year (alumni)
+  rollNumber: String,       // College roll / register number
 
   // Profile
   bio: String,

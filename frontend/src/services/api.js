@@ -134,11 +134,36 @@ export const connectionService = {
 
 // ─── Admin Service ────────────────────────────────────────────
 export const adminService = {
+  // Existing
   getPendingAlumni: () => api.get('/admin/pending-alumni'),
   activateUser: (userId) => api.put(`/admin/activate/${userId}`),
   rejectUser: (userId) => api.delete(`/admin/reject/${userId}`),
-  getStats: () => api.get('/admin/stats')
+  getStats: () => api.get('/admin/stats'),
+  getAnalytics: () => api.get('/admin/analytics'),
+
+  // Alumni CRUD (new)
+  getAlumni: (params) => api.get('/admin/alumni', { params }),
+  updateAlumni: (id, data) => api.put(`/admin/alumni/${id}`, data),
+  deleteAlumni: (id) => api.delete(`/admin/alumni/${id}`),
+  approveAlumni: (id) => api.put(`/admin/activate/${id}`),
+  rejectAlumni: (id) => api.put(`/admin/reject-alumni/${id}`),
+};
+
+// ─── Student Service ──────────────────────────────────────────
+export const studentAdminService = {
+  getStudents:  (params) => api.get('/admin/students', { params }),
+  addStudent:   (data)   => api.post('/admin/students', data),
+  updateStudent:(id, data) => api.put(`/admin/students/${id}`, data),
+  deleteStudent:(id)     => api.delete(`/admin/students/${id}`),
+  promoteToAlumni: (id)  => api.put(`/admin/students/${id}/promote`),
+  bulkImport: (formData) => api.post('/admin/students/bulk-import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  // Unified import: preview=true → dry run, preview=false → write to DB
+  importUnified: (formData, type, preview = false) =>
+    api.post(`/admin/import?type=${type}&preview=${preview}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 export default api;
-

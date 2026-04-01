@@ -12,7 +12,9 @@ import {
 
 const Messaging = () => {
   const { user } = useAuth();
-  const { socket: contextSocket, isOnline } = useSocket();
+  // FIX 3: Pull onlineUsers array directly from context so the online-status
+  // effect reacts to reference changes — avoids stale isOnline closures.
+  const { socket: contextSocket, onlineUsers } = useSocket();
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -31,56 +33,72 @@ const Messaging = () => {
   const typingTimeoutRef = useRef(null);
   const selectChatRef = useRef(null);
 
-    // ── Connect Socket & Setup listeners ──────────────────────────
-    useEffect(() => {
-      if (!user || !contextSocket) return;
+  // ── Connect Socket & Setup listeners ──────────────────────────
+  useEffect(() => {
+    if (!user || !contextSocket) return;
 
-      // Use the shared SocketContext socket — single connection for the whole app
-      const socket = contextSocket;
-      socketRef.current = socket;
+    // FIX: Use the shared SocketContext socket — eliminates duplicate connections
+    const socket = contextSocket;
+    socketRef.current = socket;
 
-      socket.emit('setup', user);
+    // FIX 1 & 2: Properly update messages in real-time using named handler so
+    // we can cleanly remove only our listener on cleanup (avoids duplicates).
+    const handleNewMessage = (newMessage) => {
+      const msgChatId = newMessage.chatId?._id || newMessage.chatId;
 
-    socket.on('message_received', (newMessage) => {
-      // Update the active chat messages in real-time if the chat is open
+      // Update messages only if the active chat matches.
+      // setMessages is called inside the setActiveChat updater so we always
+      // read the current activeChat value, never a stale closure snapshot.
       setActiveChat(prev => {
-        if (prev && (prev._id === newMessage.chatId._id || prev._id === newMessage.chatId)) {
+        if (prev && (prev._id === msgChatId)) {
+          // FIX 2: set messages inside the callback so we always have the
+          // latest activeChat before deciding whether to append.
           setMessages(prevMsgs => [...prevMsgs, newMessage]);
         }
         return prev;
       });
 
-      // Update the chats list sidebar with the last message preview
-      setChats(prevChats =>
-        prevChats.map(c => {
-          const cid = c._id;
-          const msgChatId = newMessage.chatId._id || newMessage.chatId;
-          if (cid === msgChatId) {
+      // FIX 4: Update last-message preview AND re-sort by timestamp
+      setChats(prev => {
+        const updated = prev.map(c => {
+          if (c._id === msgChatId) {
             return {
               ...c,
               lastMessage: {
                 text: newMessage.text,
-                senderId: newMessage.senderId._id || newMessage.senderId,
-                timestamp: newMessage.createdAt || new Date()
+                senderId: newMessage.senderId?._id || newMessage.senderId,
+                timestamp: newMessage.createdAt || new Date().toISOString()
               }
             };
           }
           return c;
-        })
-      );
-    });
+        });
 
-    socket.on('typing', () => setIsTyping(true));
+        // Re-sort so latest conversation bubbles to the top (LinkedIn behavior)
+        return updated.sort((a, b) => {
+          const aTime = new Date(a.lastMessage?.timestamp || a.updatedAt || 0);
+          const bTime = new Date(b.lastMessage?.timestamp || b.updatedAt || 0);
+          return bTime - aTime;
+        });
+      });
+
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('[Socket] message_received', newMessage);
+      }
+    };
+
+    socket.on('message_received', handleNewMessage);
+    // FIX 5: named handlers so off() is precise
+    socket.on('typing',      () => setIsTyping(true));
     socket.on('stop_typing', () => setIsTyping(false));
 
     return () => {
-      socket.off('message_received');
-      socket.off('connected');
+      socket.off('message_received', handleNewMessage);
       socket.off('typing');
       socket.off('stop_typing');
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); // intentional: contextSocket omitted to avoid re-subscribing on every render
+  // activeChat._id is a dep because we check it inside the handler
+  }, [user, contextSocket, activeChat?._id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Derive display info from a chat document ──────────────────
   // Declared here (before the fetchChats effect) to avoid TDZ error
@@ -123,23 +141,25 @@ const Messaging = () => {
     if (user) fetchChats();
   }, [user, location.search, enrichChat]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Re-derive online status whenever onlineUsers changes ─────
+  // ── FIX 3: Re-derive online status whenever onlineUsers array changes ─────
+  // Subscribes to the `onlineUsers` array reference from SocketContext directly
+  // instead of the `isOnline` helper — prevents stale-closure bugs.
   useEffect(() => {
     if (!user || chats.length === 0) return;
     setChats(prev =>
       prev.map(chat => ({
         ...chat,
-        status: isOnline(chat.otherUserId) ? 'online' : 'offline',
+        status: onlineUsers.includes(chat.otherUserId) ? 'online' : 'offline',
       }))
     );
     // Also refresh activeChat header status
     if (activeChat?.otherUserId) {
       setActiveChat(prev =>
-        prev ? { ...prev, status: isOnline(prev.otherUserId) ? 'online' : 'offline' } : prev
+        prev ? { ...prev, status: onlineUsers.includes(prev.otherUserId) ? 'online' : 'offline' } : prev
       );
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOnline]);
+  }, [onlineUsers]); // onlineUsers is a new array reference on every backend broadcast
 
   // ── Build accepted connection ID set from AuthContext user ────────
   // We read directly from the user object (already in memory) instead of
@@ -251,16 +271,29 @@ const Messaging = () => {
     }
   };
 
-  // ── Typing indicator ──────────────────────────────────────────
+  // ── FIX 7: Typing indicator with explicit UI state cleanup ──────
   const handleTyping = (value) => {
     setMsgInput(value);
     if (!socketRef.current || !activeChat) return;
+
     socketRef.current.emit('typing', activeChat._id);
+
+    // Clear any pending timeout so it resets on every keystroke
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
     typingTimeoutRef.current = setTimeout(() => {
       socketRef.current.emit('stop_typing', activeChat._id);
+      // FIX 5: Explicitly reset the local UI state to avoid stuck indicator
+      setIsTyping(false);
     }, 1500);
   };
+
+  // Cleanup timeout on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, []);
 
   // ── Filter sidebar chats by search ───────────────────────────
   const filteredChats = chats.filter(c =>

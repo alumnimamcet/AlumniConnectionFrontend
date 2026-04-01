@@ -47,6 +47,10 @@ const onlineUsers = new Map(); // socketId → userId
 const broadcastOnlineUsers = () => {
   const uniqueIds = [...new Set(onlineUsers.values())];
   io.emit('online_users', uniqueIds);
+  // FIX 8: Log for easier debugging
+  if (process.env.NODE_ENV !== 'test') {
+    console.log(`📊 Online users: ${uniqueIds.length}`);
+  }
 };
 
 io.on('connection', (socket) => {
@@ -56,7 +60,7 @@ io.on('connection', (socket) => {
     const uid = userData?._id || userData?.id;
     if (!uid) return;
 
-    socket.join(uid);
+    socket.join(uid.toString());
     socket.emit('connected');
 
     // Register presence
@@ -74,18 +78,25 @@ io.on('connection', (socket) => {
     const chat = newMessageReceived.chatId;
     if (!chat?.participants) return;
 
+    // FIX 9: Use toString() to safely compare ObjectIds vs plain strings
+    const senderId = (newMessageReceived.senderId?._id || newMessageReceived.senderId)?.toString();
+
     chat.participants.forEach((participant) => {
-      if (participant._id === newMessageReceived.senderId?._id) return;
+      const participantId = (participant._id || participant)?.toString();
+      if (participantId === senderId) return; // Don't echo back to sender
+
+      // FIX: text field (matches frontend emit), not content
+      const preview = (newMessageReceived.text || newMessageReceived.content || '').substring(0, 60) || 'You have a new message.';
 
       // Send the message
-      socket.in(participant._id).emit('message_received', newMessageReceived);
+      socket.in(participantId).emit('message_received', newMessageReceived);
 
       // Also send a notification bubble
-      socket.in(participant._id).emit('notification_received', {
+      socket.in(participantId).emit('notification_received', {
         _id: Date.now().toString(),
         type: 'message',
         title: `New message from ${newMessageReceived.senderId?.name || 'Someone'}`,
-        description: newMessageReceived.content?.substring(0, 60) || 'You have a new message.',
+        description: preview,
         isRead: false,
         createdAt: new Date().toISOString(),
         relatedId: chat._id
@@ -97,6 +108,7 @@ io.on('connection', (socket) => {
   socket.on('typing', (room) => socket.in(room).emit('typing'));
   socket.on('stop_typing', (room) => socket.in(room).emit('stop_typing'));
 
+  // FIX 9: Clean up on ANY disconnect (not just explicit logout)
   socket.on('disconnect', () => {
     onlineUsers.delete(socket.id);
     broadcastOnlineUsers();
@@ -114,6 +126,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/connections', require('./routes/connections'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/admin', require('./routes/adminAnalytics'));
 
 // ─── Health Check ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));

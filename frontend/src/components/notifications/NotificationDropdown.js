@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { notificationService } from '../../services/api';
 import { useSocket } from '../../context/SocketContext';
@@ -34,6 +34,9 @@ const NotificationDropdown = () => {
   const [isOpen,         setIsOpen]         = useState(false);
   const [notifications,  setNotifications]  = useState([]);
   const [hasNew,         setHasNew]         = useState(false);
+  // Debounced search state — avoids filtering on every keystroke
+  const [search,         setSearch]         = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const dropdownRef = useRef(null);
   const navigate    = useNavigate();
   const { user }    = useAuth();
@@ -53,12 +56,18 @@ const NotificationDropdown = () => {
     if (!socket) return;
 
     const handleNotif = (notif) => {
+      // FIX 4: Create a new array reference so React always triggers a re-render
       setNotifications(prev => [notif, ...prev]);
       setHasNew(true);
       setTimeout(() => setHasNew(false), 3000);
+
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('[Socket] notification_received', notif);
+      }
     };
 
     socket.on('notification_received', handleNotif);
+    // Clean up only our specific handler — avoids removing other listeners
     return () => socket.off('notification_received', handleNotif);
   }, [socket]);
 
@@ -91,6 +100,8 @@ const NotificationDropdown = () => {
     e.stopPropagation();
     try {
       await notificationService.markAllRead();
+      // FIX 6: map() returns a new array reference — React detects mutation
+      // and re-renders; unread count (useMemo) immediately drops to zero.
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setIsOpen(false);
     } catch { /* silent */ }
@@ -110,11 +121,34 @@ const NotificationDropdown = () => {
     else                                navigate('/notifications');
   };
 
-  const sorted    = [...notifications].sort((a, b) => {
-    if (a.isRead === b.isRead) return new Date(b.createdAt) - new Date(a.createdAt);
-    return a.isRead ? 1 : -1;
-  });
-  const unread    = sorted.filter(n => !n.isRead).length;
+  // ── Debounce search input to avoid expensive re-filters on every keystroke ──
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // FIX 5: useMemo — recomputes automatically whenever notifications change.
+  // This guarantees unread count and sorted list stay consistent.
+  const sorted = useMemo(() => {
+    const s = debouncedSearch.toLowerCase();
+    const filtered = s
+      ? notifications.filter(n =>
+          (n.title || '').toLowerCase().includes(s) ||
+          (n.description || '').toLowerCase().includes(s)
+        )
+      : notifications;
+
+    return [...filtered].sort((a, b) => {
+      if (a.isRead === b.isRead) return new Date(b.createdAt) - new Date(a.createdAt);
+      return a.isRead ? 1 : -1;
+    });
+  }, [notifications, debouncedSearch]);
+
+  // FIX 5: Derive unread count from same memo source for consistency
+  const unread = useMemo(
+    () => notifications.filter(n => !n.isRead).length,
+    [notifications]
+  );
 
   return (
     <div className="position-relative" ref={dropdownRef}>
