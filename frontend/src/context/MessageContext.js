@@ -47,27 +47,29 @@ export const MessageProvider = ({ children }) => {
   // ── Mark a chat as read (called from Messaging when user opens chat) ──
   const markChatAsRead = useCallback((chatId) => {
     if (!chatId) return;
+    const key = chatId.toString();
     // Zero out locally immediately for instant badge update
     setUnreadMap(prev => {
-      const next = { ...prev, [chatId]: 0 };
+      const next = { ...prev, [key]: 0 };
       recalcTotal(next);
       return next;
     });
     // Persist on server (fire-and-forget)
-    chatService.markChatRead(chatId).catch(() => {});
+    chatService.markChatRead(key).catch(() => {});
   }, [recalcTotal]);
 
   // ── Increment count when a real-time message arrives ────────
   //   Called from Messaging.js (which has the socket listener)
   const incrementUnread = useCallback((chatId) => {
     if (!chatId) return;
+    const key = chatId.toString();
     // If the incoming chat is the one the user has open, mark read immediately
-    if (activeChatIdRef.current === chatId) {
-      markChatAsRead(chatId);
+    if (activeChatIdRef.current && activeChatIdRef.current === key) {
+      markChatAsRead(key);
       return;
     }
     setUnreadMap(prev => {
-      const next = { ...prev, [chatId]: (prev[chatId] || 0) + 1 };
+      const next = { ...prev, [key]: (prev[key] || 0) + 1 };
       recalcTotal(next);
       return next;
     });
@@ -75,7 +77,8 @@ export const MessageProvider = ({ children }) => {
 
   // ── Let Messaging page register which chat is currently open ──
   const setActiveChatId = useCallback((chatId) => {
-    activeChatIdRef.current = chatId || null;
+    // Always store as string so comparison with socket-delivered IDs is consistent
+    activeChatIdRef.current = chatId ? chatId.toString() : null;
   }, []);
 
   return (

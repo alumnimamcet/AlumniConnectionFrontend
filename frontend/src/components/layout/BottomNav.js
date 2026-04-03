@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
-import { useMessage } from '../../context/MessageContext';
 import { navigationConfig, getUserRoleKey } from '../../config/navigationConfig';
 import '../../styles/Navbar.css';
 
@@ -12,7 +11,6 @@ const BottomNav = () => {
     const { user } = useAuth();
 
     const { unreadCount } = useSocket();                    // bell badge (notifications)
-    const { totalUnreadCount } = useMessage();              // chat badge (real unread messages)
 
     const isLandingPage = path === '/';
     const isAuthPage = path.startsWith('/login') || path.startsWith('/register') || path.startsWith('/signup');
