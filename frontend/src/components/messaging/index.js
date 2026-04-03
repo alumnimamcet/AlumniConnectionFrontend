@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { userService, connectionService } from '../../services/api';
+import { userService } from '../../services/api';
 
 // ── Helpers ────────────────────────────────────────────────────
 const formatTimestamp = (ts) => {
@@ -154,7 +154,6 @@ export const ChatItem = ({ chat, currentUserId, isActive, onClick, unreadCount =
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onClick()}
-      aria-selected={isActive}
     >
       <MsgAvatar
         name={chat.userName}
@@ -511,7 +510,7 @@ export const ProfilePreviewPanel = ({ chat, onClose }) => {
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [chat?.otherUserId]);
+  }, [chat?.otherUserId, chat?.isGroupChat]);
 
   const handleViewProfile = () => {
     if (chat?.otherUserId) navigate(`/profile/${chat.otherUserId}`);
