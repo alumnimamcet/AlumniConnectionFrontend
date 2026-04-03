@@ -12,6 +12,10 @@ import {
   FiBriefcase,
   FiFilter,
   FiChevronDown,
+  FiMapPin,
+  FiMail,
+  FiExternalLink,
+  FiAward,
 } from 'react-icons/fi';
 
 /* ─────────────────────────────────────────────────────────────
@@ -30,9 +34,310 @@ const DEPARTMENTS = [
 ];
 
 /* ─────────────────────────────────────────────────────────────
+   PROFILE PREVIEW MODAL
+   Slide-in side drawer — no page navigation
+───────────────────────────────────────────────────────────── */
+const ProfilePreviewModal = ({ userId, onClose, onConnect, actionLoading, connectedSet }) => {
+  const navigate  = useNavigate();
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [connStatus, setConnStatus] = useState('none');
+  const isConnected = connectedSet.has(userId);
+
+  // Lock body scroll while open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  // Fetch full profile + connection status
+  useEffect(() => {
+    if (!userId) return;
+    setLoading(true);
+    Promise.all([
+      userService.getById(userId),
+      connectionService.getStatus(userId),
+    ]).then(([profRes, statusRes]) => {
+      setProfile(profRes.data?.data || profRes.data);
+      const raw = (statusRes.data?.status || 'none').toLowerCase();
+      setConnStatus(raw === 'accepted' ? 'connected' : raw);
+    }).catch(() => {
+      toast.error('Could not load profile');
+      onClose();
+    }).finally(() => setLoading(false));
+  }, [userId, onClose]);
+
+  // Click-outside backdrop to close
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  const picUrl   = profile?.profilePic || '';
+  const initials = (profile?.name || '?')[0].toUpperCase();
+
+  return (
+    <div
+      onClick={handleBackdropClick}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1050,
+        background: 'rgba(0,0,0,0.45)',
+        display: 'flex', justifyContent: 'flex-end',
+        backdropFilter: 'blur(2px)',
+        animation: 'fadeIn .15s ease',
+      }}
+    >
+      <div
+        style={{
+          width: '100%', maxWidth: 420,
+          background: '#fff',
+          height: '100%',
+          overflowY: 'auto',
+          display: 'flex', flexDirection: 'column',
+          boxShadow: '-8px 0 40px rgba(0,0,0,.18)',
+          animation: 'slideInRight .2s cubic-bezier(.22,1,.36,1)',
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid #f3f4f6' }}>
+          <span style={{ fontWeight: 800, fontSize: 15, color: '#111827' }}>Profile Preview</span>
+          <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7280', padding: 4, display: 'flex' }}>
+            <FiX size={20} />
+          </button>
+        </div>
+
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600" />
+          </div>
+        ) : !profile ? null : (
+          <>
+            {/* Banner + Avatar */}
+            <div style={{ position: 'relative', marginBottom: 40 }}>
+              <div style={{
+                height: 100,
+                background: 'linear-gradient(135deg, #c84022 0%, #e85d38 55%, #1a1a2e 100%)'
+              }} />
+              <div style={{
+                position: 'absolute', bottom: -36, left: 20,
+                width: 72, height: 72, borderRadius: '50%',
+                border: '4px solid #fff', overflow: 'hidden',
+                background: '#fef2f2',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 28, fontWeight: 800, color: '#c84022',
+                boxShadow: '0 2px 10px rgba(0,0,0,.15)',
+                cursor: 'pointer',
+              }}
+                onClick={() => { onClose(); navigate(`/profile/${userId}`); }}
+              >
+                {picUrl
+                  ? <img src={picUrl} alt={profile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : initials}
+              </div>
+            </div>
+
+            {/* Basic info */}
+            <div style={{ padding: '0 20px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2
+                    style={{ fontWeight: 800, fontSize: 18, color: '#111827', margin: 0, cursor: 'pointer' }}
+                    onClick={() => { onClose(); navigate(`/profile/${userId}`); }}
+                  >
+                    {profile.name}
+                  </h2>
+                  <p style={{ fontSize: 13, color: '#6b7280', margin: '3px 0 0' }}>
+                    {profile.designation
+                      ? `${profile.designation}${profile.company ? ` at ${profile.company}` : ''}`
+                      : profile.company || ''}
+                  </p>
+                </div>
+                <span style={{
+                  fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
+                  padding: '3px 8px', borderRadius: 20, flexShrink: 0, marginTop: 3,
+                  background: profile.role === 'alumni' ? '#fef2f2' : '#eff6ff',
+                  color:      profile.role === 'alumni' ? '#c84022'  : '#2563eb',
+                }}>
+                  {profile.role}
+                </span>
+              </div>
+
+              {/* Meta chips */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+                {profile.department && (
+                  <span style={{ fontSize: 11, background: '#f3f4f6', color: '#374151', borderRadius: 20, padding: '3px 10px', fontWeight: 600 }}>
+                    {profile.department}
+                  </span>
+                )}
+                {profile.batch && (
+                  <span style={{ fontSize: 11, background: '#f3f4f6', color: '#374151', borderRadius: 20, padding: '3px 10px', fontWeight: 600 }}>
+                    Batch {profile.batch}
+                  </span>
+                )}
+                {profile.degree && (
+                  <span style={{ fontSize: 11, background: '#f3f4f6', color: '#374151', borderRadius: 20, padding: '3px 10px', fontWeight: 600 }}>
+                    {profile.degree}
+                  </span>
+                )}
+              </div>
+
+              {/* Location / Email */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 10, fontSize: 12, color: '#6b7280' }}>
+                {(profile.city || profile.state) && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <FiMapPin size={12} style={{ color: '#c84022', flexShrink: 0 }} />
+                    {[profile.city, profile.state].filter(Boolean).join(', ')}
+                  </span>
+                )}
+                {profile.email && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <FiMail size={12} style={{ color: '#c84022', flexShrink: 0 }} />
+                    {profile.email}
+                  </span>
+                )}
+                {profile.connectionCount && parseInt(profile.connectionCount) > 0 && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <FiUsers size={12} style={{ color: '#c84022', flexShrink: 0 }} />
+                    {profile.connectionCount} connection{parseInt(profile.connectionCount) !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+
+              {/* Connection CTA */}
+              <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                {isConnected || connStatus === 'connected' ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: '#16a34a' }}>
+                    <FiUserCheck size={14} /> Connected
+                  </span>
+                ) : connStatus === 'pending' ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: '#6b7280' }}>
+                    <FiClock size={13} /> Request Sent
+                  </span>
+                ) : (
+                  <button
+                    disabled={actionLoading === userId}
+                    onClick={() => onConnect(userId)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '7px 16px', background: '#c84022', color: '#fff',
+                      border: 'none', borderRadius: 20, fontWeight: 700, fontSize: 13,
+                      cursor: 'pointer', opacity: actionLoading === userId ? 0.6 : 1
+                    }}
+                  >
+                    <FiUserPlus size={13} />
+                    {actionLoading === userId ? 'Sending…' : 'Connect'}
+                  </button>
+                )}
+                <button
+                  onClick={() => { onClose(); navigate(`/profile/${userId}`); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '7px 16px', background: '#fff',
+                    border: '1.5px solid #e5e7eb', borderRadius: 20,
+                    fontWeight: 700, fontSize: 13, color: '#374151', cursor: 'pointer'
+                  }}
+                >
+                  <FiExternalLink size={13} /> Full Profile
+                </button>
+              </div>
+            </div>
+
+            <div style={{ height: 1, background: '#f3f4f6', margin: '0 20px' }} />
+
+            {/* About */}
+            {profile.bio && (
+              <div style={{ padding: '14px 20px' }}>
+                <h4 style={{ fontWeight: 800, fontSize: 13, color: '#111827', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.4px' }}>About</h4>
+                <p style={{ fontSize: 13, color: '#4b5563', lineHeight: 1.7, margin: 0 }}>{profile.bio}</p>
+              </div>
+            )}
+
+            {/* Skills */}
+            {(profile.skills || []).length > 0 && (
+              <div style={{ padding: '14px 20px', borderTop: '1px solid #f3f4f6' }}>
+                <h4 style={{ fontWeight: 800, fontSize: 13, color: '#111827', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.4px', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <FiAward size={13} style={{ color: '#c84022' }} /> Skills
+                </h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {profile.skills.map((s, i) => (
+                    <span key={i} style={{ fontSize: 12, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 20, padding: '3px 10px', fontWeight: 600, color: '#374151' }}>
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Experience */}
+            {(profile.experience || []).length > 0 && (
+              <div style={{ padding: '14px 20px', borderTop: '1px solid #f3f4f6' }}>
+                <h4 style={{ fontWeight: 800, fontSize: 13, color: '#111827', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.4px', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <FiBriefcase size={13} style={{ color: '#c84022' }} /> Experience
+                </h4>
+                {profile.experience.slice(0, 3).map((exp, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: 10, marginBottom: idx < profile.experience.length - 1 ? 12 : 0 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <FiBriefcase size={15} style={{ color: '#c84022' }} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: '#111827' }}>{exp.title}</div>
+                      <div style={{ fontSize: 12, color: '#6b7280' }}>{exp.company}</div>
+                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{exp.duration}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Education */}
+            {(profile.education || []).length > 0 && (
+              <div style={{ padding: '14px 20px', borderTop: '1px solid #f3f4f6' }}>
+                <h4 style={{ fontWeight: 800, fontSize: 13, color: '#111827', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.4px' }}>Education</h4>
+                {profile.education.slice(0, 2).map((edu, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: 10, marginBottom: idx < profile.education.length - 1 ? 12 : 0 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ fontSize: 16 }}>🎓</span>
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: '#111827' }}>{edu.school}</div>
+                      <div style={{ fontSize: 12, color: '#6b7280' }}>{edu.degree}</div>
+                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{edu.duration}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Footer CTA */}
+            <div style={{ padding: '16px 20px', borderTop: '1px solid #f3f4f6', marginTop: 'auto' }}>
+              <button
+                onClick={() => { onClose(); navigate(`/profile/${userId}`); }}
+                style={{
+                  width: '100%', padding: '10px', background: '#c84022',
+                  color: '#fff', border: 'none', borderRadius: 10,
+                  fontWeight: 800, fontSize: 14, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+                }}
+              >
+                <FiExternalLink size={15} /> View Full Profile
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* CSS keyframes injected inline */}
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+      `}</style>
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
    USER CARD
 ───────────────────────────────────────────────────────────── */
-const UserCard = ({ user, type, onAction, actionLoading, connected }) => {
+const UserCard = ({ user, type, onAction, actionLoading, connected, onPreview }) => {
   const navigate   = useNavigate();
   const picUrl     = user?.profilePic || '';
   const initials   = (user?.name || '?')[0].toUpperCase();
@@ -44,7 +349,7 @@ const UserCard = ({ user, type, onAction, actionLoading, connected }) => {
       <div className="h-16 bg-gradient-to-r from-red-50 to-red-100 w-full relative">
         <div className="absolute -bottom-8 left-1/2 -translate-x-1/2">
           <div
-            onClick={() => navigate(`/profile/${user._id}`)}
+            onClick={() => onPreview(user._id)}
             className="w-16 h-16 rounded-full border-4 border-white bg-white overflow-hidden shadow-sm cursor-pointer flex items-center justify-center text-xl font-bold text-red-600 select-none"
           >
             {picUrl
@@ -58,7 +363,7 @@ const UserCard = ({ user, type, onAction, actionLoading, connected }) => {
         {/* Name */}
         <h3
           className="font-bold text-gray-900 text-[15px] hover:text-red-700 cursor-pointer transition line-clamp-1"
-          onClick={() => navigate(`/profile/${user._id}`)}
+          onClick={() => onPreview(user._id)}
         >
           {user.name}
         </h3>
@@ -98,7 +403,7 @@ const UserCard = ({ user, type, onAction, actionLoading, connected }) => {
         {/* Actions */}
         <div className="mt-auto pt-4 flex gap-2">
           <button
-            onClick={() => navigate(`/profile/${user._id}`)}
+            onClick={() => onPreview(user._id)}
             className="flex-1 py-1.5 px-3 border border-red-200 text-red-600 font-semibold rounded-full text-xs hover:bg-red-50 transition"
           >
             View Profile
@@ -137,8 +442,7 @@ const UserCard = ({ user, type, onAction, actionLoading, connected }) => {
 /* ─────────────────────────────────────────────────────────────
    SEARCH RESULT ROW  (compact list for search mode)
 ───────────────────────────────────────────────────────────── */
-const SearchResultRow = ({ user, onConnect, actionLoading, connectedIds }) => {
-  const navigate  = useNavigate();
+const SearchResultRow = ({ user, onConnect, actionLoading, connectedIds, onPreview }) => {
   const isConn    = connectedIds.has(user._id);
   const picUrl    = user?.profilePic || '';
   const initials  = (user?.name || '?')[0].toUpperCase();
@@ -147,7 +451,7 @@ const SearchResultRow = ({ user, onConnect, actionLoading, connectedIds }) => {
     <div className="flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 transition">
       {/* Avatar */}
       <div
-        onClick={() => navigate(`/profile/${user._id}`)}
+        onClick={() => onPreview(user._id)}
         className="w-12 h-12 rounded-full border-2 border-white shadow-sm bg-red-50 overflow-hidden flex items-center justify-center text-base font-bold text-red-600 cursor-pointer flex-shrink-0"
       >
         {picUrl
@@ -160,7 +464,7 @@ const SearchResultRow = ({ user, onConnect, actionLoading, connectedIds }) => {
         <div className="flex items-center gap-2">
           <span
             className="font-semibold text-gray-900 text-sm hover:text-red-700 cursor-pointer transition line-clamp-1"
-            onClick={() => navigate(`/profile/${user._id}`)}
+            onClick={() => onPreview(user._id)}
           >
             {user.name}
           </span>
@@ -224,6 +528,7 @@ const Network = () => {
   const [loading, setLoading] = useState({ discover: true, connections: false, pending: false });
   const [actionLoading, setActionLoading] = useState(null);
   const [connectedSet,  setConnectedSet]  = useState(new Set()); // IDs of confirmed connections
+  const [previewUserId, setPreviewUserId] = useState(null);     // Quick preview modal
 
   const navigate = useNavigate();
 
@@ -377,6 +682,17 @@ const Network = () => {
   ───────────────────────────────────────────────────────────── */
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 16px 80px' }}>
+
+      {/* Profile Preview Modal */}
+      {previewUserId && (
+        <ProfilePreviewModal
+          userId={previewUserId}
+          onClose={() => setPreviewUserId(null)}
+          onConnect={handleConnect}
+          actionLoading={actionLoading}
+          connectedSet={connectedSet}
+        />
+      )}
 
       {/* ── PAGE HEADER + TAB BAR ── */}
       <div style={{ marginBottom: 20, display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 12, justifyContent: 'space-between' }}>
@@ -542,6 +858,7 @@ const Network = () => {
                   onConnect={handleConnect}
                   actionLoading={actionLoading}
                   connectedIds={connectedSet}
+                  onPreview={setPreviewUserId}
                 />
               ))}
             </div>
@@ -575,7 +892,7 @@ const Network = () => {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {suggestedAlumni.map(u => (
-                      <UserCard key={u._id} user={u} type="suggestion" onAction={handleConnect} actionLoading={actionLoading} connected={connectedSet.has(u._id)} />
+                      <UserCard key={u._id} user={u} type="suggestion" onAction={handleConnect} actionLoading={actionLoading} connected={connectedSet.has(u._id)} onPreview={setPreviewUserId} />
                     ))}
                   </div>
                 )}
@@ -598,7 +915,7 @@ const Network = () => {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {suggestedStudents.map(u => (
-                      <UserCard key={u._id} user={u} type="suggestion" onAction={handleConnect} actionLoading={actionLoading} connected={connectedSet.has(u._id)} />
+                      <UserCard key={u._id} user={u} type="suggestion" onAction={handleConnect} actionLoading={actionLoading} connected={connectedSet.has(u._id)} onPreview={setPreviewUserId} />
                     ))}
                   </div>
                 )}
@@ -634,7 +951,7 @@ const Network = () => {
             <>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 14 }}>{myConnections.length} Connection{myConnections.length !== 1 ? 's' : ''}</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {myConnections.map(u => <UserCard key={u._id} user={u} type="connection" />)}
+                {myConnections.map(u => <UserCard key={u._id} user={u} type="connection" onPreview={setPreviewUserId} />)}
               </div>
             </>
           )}
