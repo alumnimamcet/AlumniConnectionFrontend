@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
+import { useMessage } from '../../context/MessageContext';
 import { navigationConfig, getUserRoleKey } from '../../config/navigationConfig';
 import NotificationDropdown from '../notifications/NotificationDropdown';
 import { FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
@@ -53,7 +54,8 @@ const Navbar = () => {
   const path      = location.pathname;
   const navigate  = useNavigate();
   const { user, userRole, logout } = useAuth();
-  const { unreadMessageCount = 0 } = useSocket();
+  useSocket(); // keep socket alive — unreadCount for bell still used by NotificationDropdown internally
+  const { totalUnreadCount = 0 } = useMessage();
   const roleKey   = getUserRoleKey(user);
 
   // used for the pre‑login mobile menu
@@ -191,12 +193,12 @@ const Navbar = () => {
                 >
                   <div className="position-relative">
                     {Icon && <Icon size={18} className="mb-1" />}
-                    {item.isMessaging && unreadMessageCount > 0 && (
+                    {item.isMessaging && totalUnreadCount > 0 && (
                       <span
                         className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                         style={{ fontSize: '0.5rem', padding: '0.2em 0.4em', minWidth: 14, lineHeight: 1.4, fontWeight: 700 }}
                       >
-                        {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+                        {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
                       </span>
                     )}
                   </div>
