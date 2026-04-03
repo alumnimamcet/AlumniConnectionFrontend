@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
+import { useMessage } from '../../context/MessageContext';
 import { navigationConfig, getUserRoleKey } from '../../config/navigationConfig';
 import NotificationDropdown from '../notifications/NotificationDropdown';
 import { FaSignOutAlt, FaCommentDots, FaBars, FaTimes } from 'react-icons/fa';
@@ -53,7 +54,8 @@ const Navbar = () => {
   const path      = location.pathname;
   const navigate  = useNavigate();
   const { user, userRole, logout } = useAuth();
-  const { unreadMessageCount = 0 } = useSocket();
+  useSocket(); // keep socket alive — unreadCount for bell still used by NotificationDropdown internally
+  const { totalUnreadCount = 0 } = useMessage();
   const roleKey   = getUserRoleKey(user);
 
   // used for the pre‑login mobile menu
@@ -167,7 +169,9 @@ const Navbar = () => {
         {/* ── LOGGED IN — desktop only right controls ── */}
         {user && isDashboard && (
           <div className="d-none d-lg-flex align-items-center gap-3">
-            {dashboardItems.map(item => {
+            {dashboardItems
+              .filter(item => !item.isNotification)   /* NotificationDropdown below handles this */
+              .map(item => {
               const itemPath = item.noUserId
                 ? item.path
                 : `${item.path}/${user?._id || user?.id}`;
@@ -189,12 +193,12 @@ const Navbar = () => {
                 >
                   <div className="position-relative">
                     {Icon && <Icon size={18} className="mb-1" />}
-                    {item.isMessaging && unreadMessageCount > 0 && (
+                    {item.isMessaging && totalUnreadCount > 0 && (
                       <span
                         className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                         style={{ fontSize: '0.5rem', padding: '0.2em 0.4em', minWidth: 14, lineHeight: 1.4, fontWeight: 700 }}
                       >
-                        {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+                        {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
                       </span>
                     )}
                   </div>
@@ -222,21 +226,22 @@ const Navbar = () => {
           </div>
         )}
 
-        {/* ── LOGGED IN — mobile right icons ── */}
+        {/* ── LOGGED IN — mobile chat icon (top nav only) ── */}
         {user && isDashboard && (
-          <div className="d-lg-none d-flex align-items-center gap-2">
+          <div className="d-lg-none d-flex align-items-center gap-2 ms-2">
             <Link
-              to="/messaging"
+              to="/messages"
               className="text-decoration-none position-relative"
               style={{ color: brandColor }}
+              aria-label="Messages"
             >
               <FaCommentDots size={22} />
-              {unreadMessageCount > 0 && (
+              {totalUnreadCount > 0 && (
                 <span
                   className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                   style={{ fontSize: '0.5rem', padding: '0.2em 0.4em', minWidth: 14, lineHeight: 1.4, fontWeight: 700 }}
                 >
-                  {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
+                  {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
                 </span>
               )}
             </Link>

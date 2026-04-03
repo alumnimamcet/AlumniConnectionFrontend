@@ -1,0 +1,358 @@
+/* ============================================================
+   OPPORTUNITIES — Jobs + Events
+   Layout fixes: container centering, card grid, overflow,
+   mobile responsiveness, search/filter bar alignment.
+   MAMCET theme: #c84022
+   ============================================================ */
+
+/* ── Page wrapper ──────────────────────────────────────────── */
+.opps-page {
+  min-height: 100vh;
+  background: #f3f2ef;
+  overflow-x: hidden;          /* prevent any horizontal bleed */
+}
+
+/* ── Centered container — max 1100px, never full-bleed ─────── */
+.opps-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Header bar ────────────────────────────────────────────── */
+.opps-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.opps-header__title {
+  font-size: clamp(1.15rem, 4vw, 1.65rem);
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.opps-header__subtitle {
+  font-size: 0.83rem;
+  color: #888;
+  margin: 4px 0 0;
+}
+
+.opps-header__cta {
+  /* Never stretch full width on desktop */
+  width: auto !important;
+  height: 38px;
+  padding: 0 20px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 999px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── Search + filter bar ───────────────────────────────────── */
+.opps-search-bar {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+.opps-search-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.opps-search-input-wrap {
+  flex: 1;
+  min-width: 160px;
+  position: relative;
+}
+
+.opps-search-input-wrap .form-control {
+  padding-left: 34px;
+  height: 36px;
+  font-size: 13px;
+  border-radius: 999px;
+  border: none;
+  background: #f5f5f5;
+}
+
+.opps-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.opps-filter-btn {
+  flex-shrink: 0;
+  height: 36px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.opps-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  margin-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* ── FilterChip: prevent overflow on xs ───────────────────── */
+.opps-filter-row select {
+  max-width: 140px;
+  min-width: 100px !important;
+  font-size: 12px;
+}
+
+/* ── Tab toggle ────────────────────────────────────────────── */
+.opps-tabs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+/* ── Jobs list ─────────────────────────────────────────────── */
+.opps-jobs-list {
+  max-width: 820px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Job card ──────────────────────────────────────────────── */
+.opps-job-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  padding: 16px;
+  margin-bottom: 12px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  transition: box-shadow 0.18s ease;
+}
+
+.opps-job-card:hover {
+  box-shadow: 0 6px 22px rgba(0,0,0,0.09);
+}
+
+.opps-job-card__title {
+  font-size: clamp(0.88rem, 2.5vw, 1rem);
+  font-weight: 700;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.opps-job-card__company {
+  font-size: 0.8rem;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.opps-job-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 11.5px;
+  color: #888;
+  margin: 8px 0;
+}
+
+/* ── Events grid ───────────────────────────────────────────── */
+.opps-events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+/* ── Event card ────────────────────────────────────────────── */
+.opps-event-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  transition: box-shadow 0.18s ease;
+  cursor: pointer;
+}
+
+.opps-event-card:hover {
+  box-shadow: 0 6px 22px rgba(0,0,0,0.09);
+}
+
+.opps-event-card__image {
+  width: 100%;
+  height: 145px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
+
+.opps-event-card__body {
+  padding: 14px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.opps-event-card__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 6px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.opps-event-card__desc {
+  font-size: 11px;
+  color: #888;
+  line-height: 1.5;
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  margin-bottom: 8px;
+}
+
+.opps-event-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.opps-event-card__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.opps-event-card__actions .btn {
+  flex: 1;
+  font-size: 12px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Empty state ───────────────────────────────────────────── */
+.opps-empty {
+  text-align: center;
+  padding: 48px 24px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* ── Loader centering ──────────────────────────────────────── */
+.opps-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 64px 0;
+}
+
+/* ============================================================
+   MOBILE RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .opps-container {
+    padding: 12px;
+  }
+
+  .opps-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .opps-header__cta {
+    width: 100% !important;     /* full-width CTA on mobile */
+    justify-content: center;
+    display: flex;
+  }
+
+  .opps-events-grid {
+    grid-template-columns: 1fr;   /* single column on mobile */
+    gap: 12px;
+  }
+
+  .opps-jobs-list {
+    max-width: 100%;
+  }
+
+  .opps-job-card {
+    padding: 12px;
+  }
+
+  .opps-search-row {
+    gap: 8px;
+  }
+
+  .opps-filter-row select {
+    max-width: 100%;
+    min-width: 80px !important;
+    flex: 1;
+  }
+}
+
+@media (min-width: 540px) and (max-width: 768px) {
+  .opps-events-grid {
+    grid-template-columns: repeat(2, 1fr);   /* 2-col on phablet */
+  }
+}
+
+@media (max-width: 400px) {
+  .opps-header__title {
+    font-size: 1.1rem;
+  }
+
+  .opps-event-card__actions {
+    flex-direction: column;
+  }
+
+  .opps-event-card__actions .btn {
+    flex: none;
+    width: 100%;
+  }
+}

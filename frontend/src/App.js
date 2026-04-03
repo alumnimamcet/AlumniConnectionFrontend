@@ -6,6 +6,7 @@ import Navbar from './components/layout/Navbar';
 import BottomNav from './components/layout/BottomNav';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
+import { MessageProvider } from './context/MessageContext';
 import ProtectedRoute from './components/routing/ProtectedRoute';
 
 // Public Page Components
@@ -97,7 +98,8 @@ function App() {
   return (
     <AuthProvider>
       <SocketProvider>
-        <Router>
+        <MessageProvider>
+          <Router>
           <Routes>
             {/* ════════════════════════════════════════════════════
                 Admin Panel — full-screen layout (no global Navbar)
@@ -117,6 +119,18 @@ function App() {
               <Route path="/admin/settings"   element={<AdminSettings />} />
               <Route path="/admin/import"     element={<BulkImportPage />} />
               <Route path="/admin/broadcast"  element={<AdminBroadcast />} />
+            </Route>
+
+            {/* ════════════════════════════════════════════════════
+                Messaging — full-screen layout (NO Navbar/BottomNav)
+                Isolated just like the Admin panel above.
+            ════════════════════════════════════════════════════ */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/messages"         element={<Messaging />} />
+              <Route path="/messages/:chatId" element={<Messaging />} />
+              {/* Legacy redirects — keep old URLs working */}
+              <Route path="/messaging"          element={<Navigate to="/messages" replace />} />
+              <Route path="/messaging/:userId"  element={<Navigate to="/messages" replace />} />
             </Route>
 
             {/* ════════════════════════════════════════════════════
@@ -156,7 +170,6 @@ function App() {
                         <Route path="/Student/JobSearch/:userId" element={<JobSearch />} />
                         <Route path="/student/StudentEvents/:userId" element={<StudentEvents />} />
                         <Route path="/events/:userId" element={<Events />} />
-                        <Route path="/messaging/:userId" element={<Messaging />} />
                         <Route path="/notifications/:userId" element={<Notification />} />
                       </Route>
 
@@ -201,6 +214,7 @@ function App() {
             />
           </Routes>
         </Router>
+        </MessageProvider>
       </SocketProvider>
     </AuthProvider>
   );

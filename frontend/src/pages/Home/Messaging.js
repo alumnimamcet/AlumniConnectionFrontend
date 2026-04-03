@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { chatService, connectionService } from '../../services/api';
 import { useSocket } from '../../context/SocketContext';
 import { useAuth } from '../../context/AuthContext';
+import { useMessage } from '../../context/MessageContext';
 import {
   ChatSidebar,
   ChatItem,
@@ -20,6 +21,7 @@ const Messaging = () => {
   const navigate = useNavigate();
   // Pull onlineUsers array directly so online-status effect reacts to reference changes
   const { socket: contextSocket, onlineUsers } = useSocket();
+  const { markChatAsRead, incrementUnread, setActiveChatId } = useMessage();
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -54,9 +56,12 @@ const Messaging = () => {
       setActiveChat(prev => {
         if (prev && prev._id === msgChatId) {
           setMessages(prevMsgs => [...prevMsgs, newMessage]);
-          chatService.markChatRead(msgChatId).catch(() => {});
+          // Chat is open — mark read in context (also calls API)
+          markChatAsRead(msgChatId);
           setUnreadCounts(prev2 => ({ ...prev2, [msgChatId]: 0 }));
         } else {
+          // Chat is NOT open — increment in context (updates global badge)
+          incrementUnread(msgChatId);
           setUnreadCounts(prev2 => ({
             ...prev2,
             [msgChatId]: (prev2[msgChatId] || 0) + 1,
@@ -187,6 +192,7 @@ const Messaging = () => {
       }
       return chat;
     });
+    setActiveChatId(chat._id);   // tell MessageContext which chat is open
     setMobileView('chat');
     setIsComposing(false);
     setMessages([]);
@@ -206,9 +212,15 @@ const Messaging = () => {
     if (socketRef.current) {
       socketRef.current.emit('join_chat', chat._id);
     }
-    chatService.markChatRead(chat._id).catch(() => {});
+    // Mark read via context — updates global badge AND calls API
+    markChatAsRead(chat._id);
     setUnreadCounts(prev => ({ ...prev, [chat._id]: 0 }));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [markChatAsRead, setActiveChatId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Clear active chat in context on unmount
+  useEffect(() => {
+    return () => setActiveChatId(null);
+  }, [setActiveChatId]);
 
   const loadMoreMessages = async () => {
     if (!hasMore || isLoadingMore || !activeChat) return;
@@ -368,11 +380,48 @@ const Messaging = () => {
         {/* ─── LEFT: Chat Sidebar ─── */}
         <div className={`msg-sidebar ${mobileView === 'chat' ? 'msg-sidebar--hidden' : ''}`}>
           <ChatSidebar>
-            <ChatSidebar.Header
-              isComposing={isComposing}
-              onCompose={() => { setIsComposing(true); setSearch(''); setSearchResults([]); }}
-              onCancel={() => { setIsComposing(false); setSearch(''); setSearchResults([]); }}
-            />
+            {/* Sidebar header with Back-to-Home button */}
+            <div className="msg-sidebar__header">
+              <div className="d-flex align-items-center gap-2">
+                {isComposing ? (
+                  <button
+                    className="msg-icon-btn"
+                    onClick={() => { setIsComposing(false); setSearch(''); setSearchResults([]); }}
+                    title="Back to chats"
+                  >
+                    <i className="fas fa-arrow-left" />
+                  </button>
+                ) : (
+                  // Back-to-home — exits full-screen messaging
+                  <button
+                    className="msg-icon-btn"
+                    onClick={() => {
+                      const role = user?.role?.toLowerCase() || 'alumni';
+                      const uid  = user?._id || user?.id;
+                      if (role === 'student')  navigate(`/student/home/${uid}`);
+                      else if (role === 'admin') navigate(`/admin/home/${uid}`);
+                      else navigate(`/alumni/home/${uid}`);
+                    }}
+                    title="Back to home"
+                    aria-label="Go back to dashboard"
+                  >
+                    <i className="fas fa-arrow-left" />
+                  </button>
+                )}
+                <h5 className="msg-sidebar__title">
+                  {isComposing ? 'New Message' : 'Messaging'}
+                </h5>
+              </div>
+              {!isComposing && (
+                <button
+                  className="msg-compose-btn"
+                  title="New message"
+                  onClick={() => { setIsComposing(true); setSearch(''); setSearchResults([]); }}
+                >
+                  <i className="fas fa-edit" />
+                </button>
+              )}
+            </div>
             <ChatSidebar.Search value={search} onChange={setSearch} />
             <ChatSidebar.List>
               {isComposing ? (

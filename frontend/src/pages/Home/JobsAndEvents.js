@@ -11,6 +11,7 @@ import {
   FaPlus, FaBuilding, FaSearch, FaTimes,
   FaSlidersH, FaChevronDown
 } from 'react-icons/fa';
+import '../../styles/Opportunities.css';
 
 // ─── Motion preset ────────────────────────────────────────────
 const fadeUp = {
@@ -76,8 +77,7 @@ const JobCard = ({ job, onApply, canApply }) => (
     initial="initial"
     animate="animate"
     exit="exit"
-    className="bg-white rounded-4 shadow-sm border-0 p-3 p-md-4 mb-3"
-    style={{ transition: 'box-shadow .18s', cursor: 'default' }}
+    className="opps-job-card"
     whileHover={{ boxShadow: '0 6px 24px rgba(0,0,0,.08)' }}
   >
     <div className="d-flex flex-column flex-md-row gap-3 align-items-start">
@@ -98,8 +98,8 @@ const JobCard = ({ job, onApply, canApply }) => (
               <FaBuilding style={{ fontSize: 14, color: accent }} />
             </div>
             <div>
-              <h6 className="fw-bold text-dark mb-0" style={{ fontSize: 'clamp(0.9rem, 2.5vw, 1.05rem)' }}>{job.title}</h6>
-              <p className="fw-semibold text-muted mb-0" style={{ fontSize: 13 }}>{job.company}</p>
+              <p className="opps-job-card__title">{job.title}</p>
+              <p className="opps-job-card__company">{job.company}</p>
             </div>
           </div>
           <span className="badge rounded-pill border fw-normal px-3" style={pillBadge}>
@@ -153,66 +153,50 @@ const JobCard = ({ job, onApply, canApply }) => (
 // EVENT CARD — Card View
 // ══════════════════════════════════════════════════════════════
 const EventCard = ({ event, onRegister, onDetail }) => (
-  <motion.div
-    layout
-    variants={fadeUp}
-    initial="initial"
-    animate="animate"
-    exit="exit"
-    className="col-sm-6 col-xl-4"
+  <div
+    className="opps-event-card"
+    onClick={() => onDetail(event)}
   >
-    <div
-      className="bg-white rounded-4 shadow-sm border-0 overflow-hidden h-100 d-flex flex-column"
-      style={{ transition: 'box-shadow .18s', cursor: 'pointer' }}
-      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,.08)'}
-      onMouseLeave={e => e.currentTarget.style.boxShadow = ''}
-      onClick={() => onDetail(event)}
-    >
-      {/* Image */}
-      <div style={{ height: 150, overflow: 'hidden', position: 'relative' }}>
-        <img
-          src={event.image || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80'}
-          alt={event.title}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          loading="lazy"
-        />
-        <span
-          className="position-absolute top-0 end-0 m-2 badge rounded-pill fw-semibold px-3"
-          style={{ fontSize: 10, backgroundColor: 'rgba(200,64,34,.88)', color: '#fff' }}
-        >
-          {event.category}
-        </span>
-      </div>
+    {/* Image */}
+    <div style={{ position: 'relative' }}>
+      <img
+        src={event.image || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80'}
+        alt={event.title}
+        className="opps-event-card__image"
+        loading="lazy"
+      />
+      <span
+        className="position-absolute top-0 end-0 m-2 badge rounded-pill fw-semibold px-3"
+        style={{ fontSize: 10, backgroundColor: 'rgba(200,64,34,.88)', color: '#fff' }}
+      >
+        {event.category}
+      </span>
+    </div>
 
-      <div className="p-3 p-md-4 flex-grow-1 d-flex flex-column">
-        <h6 className="fw-bold text-dark mb-2" style={{ fontSize: '0.95rem', lineHeight: 1.35 }}>{event.title}</h6>
-        <p className="extra-small text-muted flex-grow-1 mb-2" style={{ lineHeight: 1.5 }}>
-          {event.desc?.substring(0, 85)}{event.desc?.length > 85 ? '…' : ''}
-        </p>
-        <div className="d-flex flex-column gap-1 mb-3" style={{ fontSize: 11.5 }}>
-          {event.date && <span className="text-muted"><FaCalendarAlt className="me-1" style={{ color: accent }} />{event.date}</span>}
-          {event.time && <span className="text-muted"><FaClock className="me-1" style={{ color: accent }} />{event.time}</span>}
-          {event.venue && <span className="text-muted"><FaMapMarkerAlt className="me-1" style={{ color: accent }} />{event.venue}</span>}
-        </div>
-        <div className="d-flex gap-2 mt-auto">
-          <button
-            className="btn btn-outline-secondary rounded-pill btn-sm px-3 fw-semibold flex-grow-1"
-            style={{ fontSize: 12 }}
-            onClick={e => { e.stopPropagation(); onDetail(event); }}
-          >
-            Details
-          </button>
-          <button
-            className={`btn rounded-pill btn-sm px-3 fw-bold flex-grow-1 ${event.registered ? 'btn-success' : 'btn-mamcet-red'}`}
-            style={{ fontSize: 12 }}
-            onClick={e => { e.stopPropagation(); onRegister(event); }}
-          >
-            {event.registered ? '✓ Registered' : 'Register'}
-          </button>
-        </div>
+    <div className="opps-event-card__body">
+      <h6 className="opps-event-card__title">{event.title}</h6>
+      <p className="opps-event-card__desc">{event.desc}</p>
+      <div className="opps-event-card__meta">
+        {event.date && <span><FaCalendarAlt className="me-1" style={{ color: accent }} />{event.date}</span>}
+        {event.time && <span><FaClock className="me-1" style={{ color: accent }} />{event.time}</span>}
+        {event.venue && <span><FaMapMarkerAlt className="me-1" style={{ color: accent }} />{event.venue}</span>}
+      </div>
+      <div className="opps-event-card__actions">
+        <button
+          className="btn btn-outline-secondary"
+          onClick={e => { e.stopPropagation(); onDetail(event); }}
+        >
+          Details
+        </button>
+        <button
+          className={`btn ${event.registered ? 'btn-success' : 'btn-mamcet-red'}`}
+          onClick={e => { e.stopPropagation(); onRegister(event); }}
+        >
+          {event.registered ? '✓ Registered' : 'Register'}
+        </button>
       </div>
     </div>
-  </motion.div>
+  </div>
 );
 
 // ══════════════════════════════════════════════════════════════
@@ -387,16 +371,16 @@ const JobsAndEvents = () => {
 
   // ════════════════════════════════════════════════════════════
   return (
-    <div className="dashboard-main-bg min-vh-100 py-3 py-md-4">
-      <div className="container">
+    <div className="opps-page">
+      <div className="opps-container">
 
         {/* ── Header Row ──────────────────────────────── */}
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3 mb-md-4">
+        <div className="opps-header">
           <div>
-            <h2 className="fw-bold mb-0 text-dark" style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)' }}>
+            <h2 className="opps-header__title">
               {activeTab === 'jobs' ? '💼 Job Opportunities' : '🎉 Alumni Events'}
             </h2>
-            <p className="text-muted mb-0 small d-none d-md-block">
+            <p className="opps-header__subtitle">
               {activeTab === 'jobs'
                 ? 'Explore roles shared by your alumni network'
                 : 'Discover upcoming events and networking opportunities'}
@@ -406,8 +390,7 @@ const JobsAndEvents = () => {
           {/* CTA — only alumni/admin can create */}
           {canCreate && (
             <button
-              className="btn btn-mamcet-red rounded-pill px-4 fw-bold d-flex align-items-center gap-2 flex-shrink-0"
-              style={{ fontSize: 13, height: 38 }}
+              className="btn btn-mamcet-red opps-header__cta d-flex align-items-center gap-2"
               onClick={() => activeTab === 'jobs' ? setPostOpen(true) : setCreateOpen(true)}
             >
               <FaPlus size={11} />
@@ -452,25 +435,23 @@ const JobsAndEvents = () => {
         </div>
 
         {/* ── Search + Filter Bar ────────────────────── */}
-        <div className="bg-white rounded-4 shadow-sm p-3 mb-3 mb-md-4">
-          <div className="d-flex flex-wrap gap-2 align-items-center">
+        <div className="opps-search-bar">
+          <div className="opps-search-row">
             {/* Search */}
-            <div className="position-relative flex-grow-1" style={{ minWidth: 180 }}>
-              <FaSearch className="position-absolute text-muted" style={{ left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', fontSize: 13 }} />
+            <div className="opps-search-input-wrap">
+              <FaSearch className="opps-search-icon" />
               <input
                 type="text"
-                className="form-control rounded-pill ps-4 border-0 bg-light"
+                className="form-control"
                 placeholder={activeTab === 'jobs' ? 'Search jobs, companies…' : 'Search events, venues…'}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{ fontSize: 13, height: 36 }}
               />
             </div>
 
             {/* Filter toggle button */}
             <button
-              className={`btn rounded-pill d-flex align-items-center gap-1 ${showFilters || activeFilterCount > 0 ? 'btn-mamcet-red' : 'btn-outline-secondary'}`}
-              style={{ fontSize: 12.5, height: 36, fontWeight: 600 }}
+              className={`btn opps-filter-btn d-flex align-items-center gap-1 ${showFilters || activeFilterCount > 0 ? 'btn-mamcet-red' : 'btn-outline-secondary'}`}
               onClick={() => setShowFilters(!showFilters)}
             >
               <FaSlidersH size={12} />
@@ -503,7 +484,7 @@ const JobsAndEvents = () => {
                 transition={{ duration: 0.2 }}
                 style={{ overflow: 'hidden' }}
               >
-                <div className="d-flex flex-wrap gap-2 pt-3 mt-2 border-top">
+                <div className="opps-filter-row">
                   {activeTab === 'jobs' ? (
                     <>
                       <FilterChip label="Type" value={jobType} options={JOB_TYPES} onChange={setJobType} />
@@ -539,7 +520,7 @@ const JobsAndEvents = () => {
             {activeTab === 'jobs' && (
               <motion.div key="jobs" variants={fadeUp} initial="initial" animate="animate" exit="exit">
                 {filteredJobs.length === 0 ? (
-                  <div className="text-center py-5 bg-white rounded-4 shadow-sm">
+                  <div className="opps-empty">
                     <FaBriefcase size={40} className="text-muted mb-3 opacity-25" />
                     <p className="text-muted fw-semibold">
                       {search || activeFilterCount > 0
@@ -553,7 +534,7 @@ const JobsAndEvents = () => {
                     )}
                   </div>
                 ) : (
-                  <div style={{ maxWidth: 800, margin: '0 auto' }}>
+                  <div className="opps-jobs-list">
                     <AnimatePresence>
                       {filteredJobs.map(job => (
                         <JobCard key={job._id || job.id} job={job} onApply={handleApply} canApply={canApply} />
@@ -568,7 +549,7 @@ const JobsAndEvents = () => {
             {activeTab === 'events' && (
               <motion.div key="events" variants={fadeUp} initial="initial" animate="animate" exit="exit">
                 {filteredEvents.length === 0 ? (
-                  <div className="text-center py-5 bg-white rounded-4 shadow-sm">
+                  <div className="opps-empty">
                     <FaCalendarAlt size={40} className="text-muted mb-3 opacity-25" />
                     <p className="text-muted fw-semibold">
                       {search || activeFilterCount > 0
@@ -582,7 +563,7 @@ const JobsAndEvents = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="row g-3 g-md-4">
+                  <div className="opps-events-grid">
                     <AnimatePresence>
                       {filteredEvents.map(event => (
                         <EventCard
