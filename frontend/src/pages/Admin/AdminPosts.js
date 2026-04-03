@@ -3,8 +3,8 @@ import { adminService } from '../../services/api';
 import { ClipLoader } from 'react-spinners';
 import {
   FiSearch, FiRefreshCw, FiTrash2, FiEyeOff, FiEye,
-  FiAlertTriangle, FiAlertOctagon, FiCheck, FiX,
-  FiSlash, FiUserX, FiFilter, FiChevronLeft, FiChevronRight,
+  FiAlertTriangle, FiCheck, FiX,
+  FiSlash, FiUserX, FiChevronLeft, FiChevronRight,
   FiFileText, FiFlag, FiShield, FiInfo, FiUser, FiMessageSquare,
   FiHeart, FiCalendar,
 } from 'react-icons/fi';
@@ -409,8 +409,6 @@ const AdminPosts = () => {
     const p = pagination.page;
     return [...new Set([1, totalPages, p, p - 1, p + 1])].filter(n => n >= 1 && n <= totalPages).sort((a, b) => a - b);
   };
-
-  const isBanned = u => u?.status === 'Inactive';
 
   /* ══════════════════════════════════════ */
   return (
