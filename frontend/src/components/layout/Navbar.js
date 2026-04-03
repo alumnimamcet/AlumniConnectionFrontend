@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { navigationConfig, getUserRoleKey } from '../../config/navigationConfig';
 import NotificationDropdown from '../notifications/NotificationDropdown';
-import { FaSignOutAlt, FaCommentDots, FaBars, FaTimes } from 'react-icons/fa';
+import { FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
 import '../../styles/Navbar.css';
 
 const LOGO_URL =
@@ -167,7 +167,9 @@ const Navbar = () => {
         {/* ── LOGGED IN — desktop only right controls ── */}
         {user && isDashboard && (
           <div className="d-none d-lg-flex align-items-center gap-3">
-            {dashboardItems.map(item => {
+            {dashboardItems
+              .filter(item => !item.isNotification)   /* NotificationDropdown below handles this */
+              .map(item => {
               const itemPath = item.noUserId
                 ? item.path
                 : `${item.path}/${user?._id || user?.id}`;
@@ -219,27 +221,6 @@ const Navbar = () => {
             >
               <FaSignOutAlt size={16} />
             </button>
-          </div>
-        )}
-
-        {/* ── LOGGED IN — mobile right icons ── */}
-        {user && isDashboard && (
-          <div className="d-lg-none d-flex align-items-center gap-2">
-            <Link
-              to="/messages"
-              className="text-decoration-none position-relative"
-              style={{ color: brandColor }}
-            >
-              <FaCommentDots size={22} />
-              {unreadMessageCount > 0 && (
-                <span
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                  style={{ fontSize: '0.5rem', padding: '0.2em 0.4em', minWidth: 14, lineHeight: 1.4, fontWeight: 700 }}
-                >
-                  {unreadMessageCount > 9 ? '9+' : unreadMessageCount}
-                </span>
-              )}
-            </Link>
           </div>
         )}
 
