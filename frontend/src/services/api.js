@@ -88,6 +88,9 @@ export const userService = {
   // Update profile text/array fields
   updateProfile: (data) => api.put('/users/update-profile', data),
 
+  // Search users by name, role, company, department, batch
+  searchUsers: (params) => api.get('/users/search', { params }),
+
   // Fetch any user's public profile
   getById: (userId) => api.get(`/users/${userId}`)
 };
@@ -156,11 +159,14 @@ export const chatService = {
 // ─── Connections Service ──────────────────────────────────────
 export const connectionService = {
   getRequests:      ()       => api.get('/connections/requests'),
+  getSentRequests:  ()       => api.get('/connections/sent-requests'), // outgoing pending
   sendRequest:      (userId) => api.post(`/connections/request/${userId}`),
   acceptRequest:    (reqId)  => api.put(`/connections/accept/${reqId}`),
   rejectRequest:    (reqId)  => api.put(`/connections/reject/${reqId}`),
   removeConnection: (userId) => api.delete(`/connections/remove/${userId}`),
-  getStatus:        (userId) => api.get(`/connections/status/${userId}`)
+  getStatus:        (userId) => api.get(`/connections/status/${userId}`),
+  getMyConnections: ()       => api.get('/connections/my-connections'),
+  getSuggestions:   (params) => api.get('/connections/suggestions', { params })
 };
 
 // ─── Admin Service ────────────────────────────────────────────

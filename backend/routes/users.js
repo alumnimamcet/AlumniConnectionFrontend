@@ -125,9 +125,60 @@ router.put('/update-profile', protect, async (req, res) => {
     }
 });
 
+// ─── GET /api/users/search ────────────────────────────────────
+// Search users by name, role, company, department, batch
+// Query params: q, role, department, batch, limit
+router.get('/search', protect, async (req, res) => {
+    try {
+        const { q = '', role = '', department = '', batch = '', limit = '20' } = req.query;
+        const pageLimit = Math.min(50, Math.max(1, parseInt(limit) || 20));
+
+        // Build filter
+        const filter = {
+            _id: { $ne: req.user._id },       // exclude self
+            role: { $in: ['alumni', 'student'] }, // exclude admins
+            status: 'Active',
+        };
+
+        // Text search across name, company, department
+        if (q && q.trim()) {
+            const regex = new RegExp(q.trim(), 'i');
+            filter.$or = [
+                { name:       regex },
+                { company:    regex },
+                { department: regex },
+                { batch:      regex },
+                { designation: regex },
+            ];
+        }
+
+        if (role && ['alumni', 'student'].includes(role.toLowerCase())) {
+            filter.role = role.toLowerCase();
+        }
+        if (department && department.trim()) {
+            filter.department = new RegExp(department.trim(), 'i');
+        }
+        if (batch && batch.trim()) {
+            filter.batch = new RegExp(batch.trim(), 'i');
+        }
+
+        const users = await User.find(filter)
+            .select('name role department batch graduationYear profilePic company designation connectionCount')
+            .sort({ connectionCount: -1, name: 1 })
+            .limit(pageLimit)
+            .lean();
+
+        res.json({ success: true, data: users, total: users.length });
+    } catch (err) {
+        console.error('User search error:', err);
+        res.status(500).json({ message: 'Search failed.' });
+    }
+});
+
 // ─── GET /api/users/:id ───────────────────────────────────────
 // Fetch any user's public profile by ID
 router.get('/:id', protect, async (req, res) => {
+
     try {
         const user = await User.findById(req.params.id).select('-password -secretKey -otp -otpExpiry');
         if (!user) return res.status(404).json({ message: 'User not found.' });

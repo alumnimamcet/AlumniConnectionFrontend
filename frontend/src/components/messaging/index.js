@@ -1,535 +1,686 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { userService } from '../../services/api';
 
-// ============================================================
-// COMPOUND COMPONENTS FOR MESSAGING
-// ============================================================
+// ── Helpers ────────────────────────────────────────────────────
+const formatTimestamp = (ts) => {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHrs  = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
 
-/**
- * ChatSidebar — Left pane: search + chat list
- */
-export const ChatSidebar = ({ children }) => (
-    <div className="d-flex flex-column h-100 border-end bg-white" style={{ minWidth: 0 }}>
-        {children}
+  if (diffMins < 1)   return 'now';
+  if (diffMins < 60)  return `${diffMins}m`;
+  if (diffHrs  < 24)  return `${diffHrs}h`;
+  if (diffDays < 7)   return d.toLocaleDateString([], { weekday: 'short' });
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+};
+
+const formatDateSep = (ts) => {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (d.toDateString() === now.toDateString())       return 'Today';
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+};
+
+const isSameDay = (ts1, ts2) => {
+  if (!ts1 || !ts2) return false;
+  return new Date(ts1).toDateString() === new Date(ts2).toDateString();
+};
+
+const getRoleBadge = (role, isGroup) => {
+  if (isGroup) return { label: 'Group', className: 'msg-role-badge msg-role-badge--group', icon: 'fa-users' };
+  if (role === 'alumni') return { label: 'Alumni', className: 'msg-role-badge msg-role-badge--alumni', icon: 'fa-graduation-cap' };
+  if (role === 'student') return { label: 'Student', className: 'msg-role-badge msg-role-badge--student', icon: 'fa-user-graduate' };
+  return null;
+};
+
+// ── Avatar ──────────────────────────────────────────────────────
+export const MsgAvatar = ({ name, profilePic, size = 48, isGroup = false, isOnline = false, className = '' }) => {
+  const sizeStyle = { width: size, height: size, fontSize: size * 0.38 };
+
+  return (
+    <div className={`msg-avatar ${className}`} style={{ width: size, height: size }}>
+      {profilePic ? (
+        <img
+          src={profilePic}
+          alt={name}
+          className="msg-avatar__img"
+          style={sizeStyle}
+          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling?.style && (e.target.nextSibling.style.display = 'flex'); }}
+        />
+      ) : null}
+      <div
+        className={`msg-avatar__initial ${isGroup ? 'msg-avatar__initial--group' : ''}`}
+        style={{ ...sizeStyle, display: profilePic ? 'none' : 'flex' }}
+      >
+        {isGroup ? <i className="fas fa-users" style={{ fontSize: size * 0.3 }} /> : (name || 'U').charAt(0).toUpperCase()}
+      </div>
+      {isOnline && !isGroup && <span className="msg-avatar__online-dot" />}
     </div>
+  );
+};
+
+// ============================================================
+// CHAT SIDEBAR
+// ============================================================
+export const ChatSidebar = ({ children }) => (
+  <div className="msg-sidebar">
+    {children}
+  </div>
 );
 
-ChatSidebar.Header = function ChatSidebarHeader({ onCompose, isComposing, onCancel }) {
-    return (
-        <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
-            <div className="d-flex align-items-center gap-2">
-                {isComposing && (
-                    <button
-                        className="btn btn-link p-0 text-dark me-1"
-                        onClick={onCancel}
-                        title="Back to chats"
-                        style={{ border: 'none', background: 'none' }}
-                    >
-                        <i className="fas fa-arrow-left"></i>
-                    </button>
-                )}
-                <h5 className="fw-bold mb-0" style={{ color: '#c84022' }}>
-                    {isComposing ? 'New Message' : 'Messaging'}
-                </h5>
-            </div>
-            {!isComposing && (
-                <button
-                    className="btn btn-link p-1 text-muted"
-                    title="New message"
-                    onClick={onCompose}
-                    style={{ border: 'none', background: 'none' }}
-                >
-                    <i className="fas fa-edit" style={{ fontSize: '1rem' }}></i>
-                </button>
-            )}
-        </div>
-    );
+ChatSidebar.Header = function ChatSidebarHeader({ isComposing, onCompose, onCancel }) {
+  return (
+    <div className="msg-sidebar__header">
+      <div className="d-flex align-items-center gap-2">
+        {isComposing && (
+          <button
+            className="msg-icon-btn"
+            onClick={onCancel}
+            title="Back to chats"
+          >
+            <i className="fas fa-arrow-left" />
+          </button>
+        )}
+        <h5 className="msg-sidebar__title">
+          {isComposing ? 'New Message' : 'Messaging'}
+        </h5>
+      </div>
+      {!isComposing && (
+        <button className="msg-compose-btn" title="New message" onClick={onCompose}>
+          <i className="fas fa-edit" />
+        </button>
+      )}
+    </div>
+  );
 };
 
 ChatSidebar.Search = function ChatSidebarSearch({ value, onChange }) {
-    return (
-        <div className="px-3 py-2 border-bottom">
-            <div className="position-relative">
-                <i
-                    className="fas fa-search position-absolute text-muted"
-                    style={{ left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', pointerEvents: 'none' }}
-                ></i>
-                <input
-                    type="text"
-                    className="form-control rounded-pill ps-4"
-                    style={{ fontSize: '0.85rem', backgroundColor: '#f3f2ef', border: '1px solid #e0e0e0', height: '36px' }}
-                    placeholder="Search messages"
-                    value={value}
-                    onChange={e => onChange(e.target.value)}
-                />
-            </div>
-        </div>
-    );
+  return (
+    <div className="msg-sidebar__search">
+      <div className="msg-search-wrap">
+        <i className="fas fa-search msg-search-icon" />
+        <input
+          type="text"
+          placeholder="Search messages"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label="Search conversations"
+          id="msg-search-input"
+        />
+        {value && (
+          <button className="msg-search-clear" onClick={() => onChange('')} title="Clear">
+            <i className="fas fa-times" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
 };
 
 ChatSidebar.List = function ChatSidebarList({ children }) {
-    return (
-        <div className="flex-grow-1 overflow-auto">
-            {children}
-        </div>
-    );
-};
-
-/**
- * ChatItem — A single conversation row in the sidebar
- */
-export const ChatItem = ({ chat, currentUserId, isActive, onClick, unreadCount = 0 }) => {
-    const lastMsg = chat.lastMessage?.text ? chat.lastMessage : chat.messages?.[chat.messages.length - 1];
-    const isMine = lastMsg?.senderId === currentUserId;
-    const hasUnread = unreadCount > 0 && !isActive;
-
-    return (
-        <div
-            onClick={onClick}
-            className="d-flex align-items-center gap-3 px-3 py-3 border-bottom"
-            style={{
-                cursor: 'pointer',
-                backgroundColor: isActive ? '#fdf0ec' : 'white',
-                borderLeft: isActive ? '3px solid #c84022' : '3px solid transparent',
-                transition: 'background 0.15s',
-            }}
-            onMouseEnter={e => { if (!isActive) e.currentTarget.style.backgroundColor = '#fafafa'; }}
-            onMouseLeave={e => { if (!isActive) e.currentTarget.style.backgroundColor = 'white'; }}
-        >
-            {/* Avatar */}
-            <div className="position-relative flex-shrink-0">
-                <div
-                    className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
-                    style={{
-                        width: '48px', height: '48px',
-                        backgroundColor: chat.isGroupChat ? '#6f42c1' : '#c84022',
-                        fontSize: '1rem'
-                    }}
-                >
-                    {chat.isGroupChat ? <i className="fas fa-users" style={{ fontSize: '0.9rem' }}></i> : chat.userInitial}
-                </div>
-                {chat.status === 'online' && !chat.isGroupChat && (
-                    <span
-                        className="position-absolute border border-white rounded-circle bg-success"
-                        style={{ width: '12px', height: '12px', bottom: '1px', right: '1px' }}
-                    ></span>
-                )}
-            </div>
-
-            {/* Name + preview */}
-            <div className="flex-grow-1 overflow-hidden">
-                <div className="d-flex justify-content-between align-items-center">
-                    <span
-                        className={`${hasUnread ? 'fw-bold text-dark' : 'fw-semibold text-dark'}`}
-                        style={{ fontSize: '0.9rem' }}
-                    >
-                        {chat.userName}
-                    </span>
-                    <div className="d-flex align-items-center gap-1">
-                        <span className="text-muted" style={{ fontSize: '0.72rem' }}>
-                            {lastMsg?.timestamp ? new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                        </span>
-                        {hasUnread && (
-                            <span
-                                className="badge rounded-pill d-flex align-items-center justify-content-center"
-                                style={{
-                                    backgroundColor: '#c84022',
-                                    color: 'white',
-                                    fontSize: '0.65rem',
-                                    minWidth: '18px',
-                                    height: '18px',
-                                    padding: '0 5px'
-                                }}
-                            >
-                                {unreadCount > 99 ? '99+' : unreadCount}
-                            </span>
-                        )}
-                    </div>
-                </div>
-                <p className={`mb-0 text-truncate ${hasUnread ? 'fw-semibold text-dark' : 'text-muted'}`} style={{ fontSize: '0.8rem' }}>
-                    {isMine ? 'You: ' : ''}{lastMsg?.text || 'Start chatting...'}
-                </p>
-            </div>
-        </div>
-    );
-};
-
-/**
- * ChatWindow — Right pane wrapper
- */
-export const ChatWindow = ({ children }) => (
-    <div className="d-flex flex-column h-100" style={{ backgroundColor: '#f3f2ef' }}>
-        {children}
+  return (
+    <div className="msg-sidebar__list">
+      {children}
     </div>
+  );
+};
+
+// ============================================================
+// CHAT ITEM
+// ============================================================
+export const ChatItem = ({ chat, currentUserId, isActive, onClick, unreadCount = 0 }) => {
+  const lastMsg = chat.lastMessage?.text ? chat.lastMessage : chat.messages?.[chat.messages.length - 1];
+  const isMine   = lastMsg?.senderId === currentUserId || lastMsg?.senderId?._id === currentUserId;
+  const hasUnread = unreadCount > 0 && !isActive;
+  const badge     = getRoleBadge(chat.userRole, chat.isGroupChat);
+
+  // Format timestamp relative
+  const ts = lastMsg?.timestamp || lastMsg?.createdAt || chat.updatedAt;
+
+  return (
+    <div
+      onClick={onClick}
+      className={`msg-chat-item ${isActive ? 'msg-chat-item--active' : ''}`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+    >
+      <MsgAvatar
+        name={chat.userName}
+        profilePic={chat.profilePic}
+        isGroup={chat.isGroupChat}
+        isOnline={chat.status === 'online'}
+        size={48}
+      />
+
+      <div className="msg-chat-item__body">
+        <div className="msg-chat-item__top">
+          <span className={`msg-chat-item__name ${hasUnread ? 'msg-chat-item__name--bold' : ''}`}>
+            {chat.userName}
+          </span>
+          <div className="d-flex align-items-center gap-1">
+            <span className="msg-chat-item__time">{formatTimestamp(ts)}</span>
+            {hasUnread && (
+              <span className="msg-unread-badge">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {badge && (
+          <div className="msg-chat-item__meta">
+            <span className={badge.className}>
+              <i className={`fas ${badge.icon}`} style={{ fontSize: '0.55rem' }} />
+              {badge.label}
+            </span>
+          </div>
+        )}
+
+        <p className={`msg-chat-item__preview ${hasUnread ? 'msg-chat-item__preview--unread' : ''}`}>
+          {isMine ? 'You: ' : ''}{lastMsg?.text || 'Start chatting…'}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ── Compose user result row ────────────────────────────────────
+export const UserResultItem = ({ user, onClick }) => {
+  const badge = getRoleBadge(user.role, false);
+  return (
+    <div className="msg-user-result" onClick={onClick} role="button" tabIndex={0}>
+      <MsgAvatar name={user.name} profilePic={user.profilePic} size={40} />
+      <div className="flex-grow-1 min-width-0">
+        <div className="msg-user-result__name">{user.name}</div>
+        <div className="d-flex align-items-center gap-2 mt-1">
+          {badge && <span className={badge.className}><i className={`fas ${badge.icon}`} style={{ fontSize: '0.55rem' }} />{badge.label}</span>}
+          <span className="msg-user-result__sub">{user.designation || user.department || ''}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
+// CHAT WINDOW
+// ============================================================
+export const ChatWindow = ({ children }) => (
+  <div className="msg-window">{children}</div>
 );
 
-ChatWindow.Header = function ChatWindowHeader({ chat, onBack, onClearChat, onDeleteChat, onVoiceCall }) {
-    const [showMenu, setShowMenu] = React.useState(false);
-    const menuRef = React.useRef(null);
+ChatWindow.Header = function ChatWindowHeader({ chat, onBack, onProfileClick, onClearChat, onDeleteChat, onVoiceCall }) {
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
 
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (menuRef.current && !menuRef.current.contains(event.target)) {
-                setShowMenu(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    return (
-        <div className="px-4 py-3 bg-white border-bottom d-flex justify-content-between align-items-center flex-shrink-0">
-            <div className="d-flex align-items-center gap-3">
-                <button
-                    className="btn btn-link p-0 d-lg-none text-dark"
-                    onClick={onBack}
-                    aria-label="Back to list"
-                >
-                    <i className="fas fa-arrow-left"></i>
-                </button>
-                <div
-                    className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                    style={{ width: '40px', height: '40px', backgroundColor: '#c84022', fontSize: '0.9rem' }}
-                >
-                    {chat.userInitial}
-                </div>
-                <div>
-                    <div className="fw-bold text-dark" style={{ fontSize: '0.95rem', lineHeight: 1.2 }}>{chat.userName}</div>
-                    <div style={{ fontSize: '0.75rem', color: chat.status === 'online' ? '#44a04a' : '#888' }}>
-                        {chat.status === 'online' ? '● Active now' : '● Offline'}
-                    </div>
-                </div>
-            </div>
-            <div className="d-flex gap-3 text-muted position-relative" ref={menuRef}>
-                <button
-                    className="btn btn-link text-muted p-1"
-                    title="Voice call"
-                    onClick={() => onVoiceCall && onVoiceCall(chat)}
-                >
-                    <i className="fas fa-phone-alt"></i>
-                </button>
-                <button
-                    className="btn btn-link text-muted p-1"
-                    title="More options"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setShowMenu(!showMenu);
-                    }}
-                >
-                    <i className="fas fa-ellipsis-h"></i>
-                </button>
-
-                {showMenu && (
-                    <div
-                        className="position-absolute bg-white border rounded shadow-sm py-1"
-                        style={{ top: '100%', right: 0, zIndex: 1060, minWidth: '180px' }}
-                    >
-                        <button
-                            className="dropdown-item px-3 py-2 text-dark d-flex align-items-center gap-2 border-0 bg-transparent w-100 text-start menu-item-hover"
-                            style={{ fontSize: '0.85rem' }}
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClearChat(); setShowMenu(false); }}
-                        >
-                            <i className="fas fa-eraser text-muted" style={{ width: '16px' }}></i>
-                            Clear Chat
-                        </button>
-                        <button
-                            className="dropdown-item px-3 py-2 text-danger d-flex align-items-center gap-2 border-0 bg-transparent w-100 text-start menu-item-hover"
-                            style={{ fontSize: '0.85rem' }}
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteChat(); setShowMenu(false); }}
-                        >
-                            <i className="fas fa-trash-alt" style={{ width: '16px' }}></i>
-                            Delete Conversation
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-ChatWindow.Messages = function ChatWindowMessages({ messages, currentUserId, onLoadMore, hasMore, isLoadingMore }) {
-    const scrollRef = useRef(null);
-    const endRef = useRef(null);
-    const prevScrollHeight = useRef(null);
-
-    // Auto-scroll to bottom only when new message arrives at the end
-    useEffect(() => { 
-        if (!isLoadingMore) {
-            endRef.current?.scrollIntoView({ behavior: 'auto' }); 
-        }
-    }, [messages, isLoadingMore]);
-
-    // Handle scroll to top for pagination
-    const handleScroll = (e) => {
-        if (e.target.scrollTop === 0 && hasMore && !isLoadingMore && onLoadMore) {
-            prevScrollHeight.current = e.target.scrollHeight;
-            onLoadMore();
-        }
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false);
     };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-    // Maintain scroll position after prepending old messages
-    useEffect(() => {
-        if (!isLoadingMore && prevScrollHeight.current && scrollRef.current) {
-            const newScrollHeight = scrollRef.current.scrollHeight;
-            scrollRef.current.scrollTop = newScrollHeight - prevScrollHeight.current;
-            prevScrollHeight.current = null;
-        }
-    }, [messages, isLoadingMore]);
+  const badge = getRoleBadge(chat.userRole, chat.isGroupChat);
 
-    return (
-        <div ref={scrollRef} onScroll={handleScroll} className="flex-grow-1 overflow-auto px-2 px-md-4 py-3 d-flex flex-column gap-2">
-            {isLoadingMore && <div className="text-center py-2"><small className="text-muted spinner-border spinner-border-sm" role="status"></small></div>}
-            {messages.map(msg => (
-                <ChatBubble key={msg._id || msg.id || Math.random()} msg={msg} isMine={msg.senderId?._id === currentUserId || msg.senderId === currentUserId} />
-            ))}
-            <div ref={endRef} style={{ height: '1px' }} />
+  return (
+    <div className="msg-window__header">
+      <div className="d-flex align-items-center gap-1" style={{ minWidth: 0, flex: 1 }}>
+        {/* Back button — visible only on mobile via CSS */}
+        <button className="msg-icon-btn msg-back-btn" onClick={onBack} aria-label="Back to list">
+          <i className="fas fa-arrow-left" />
+        </button>
+
+        {/* Clickable avatar + name area → opens profile panel */}
+        <div className="msg-window__header-left" onClick={onProfileClick}>
+          <MsgAvatar
+            name={chat.userName}
+            profilePic={chat.profilePic}
+            isGroup={chat.isGroupChat}
+            isOnline={chat.status === 'online'}
+            size={40}
+          />
+          <div style={{ minWidth: 0 }}>
+            <div className="msg-window-name">{chat.userName}</div>
+            <div className={`msg-window-status ${chat.status === 'online' ? 'msg-window-status--online' : ''}`}>
+              {chat.isGroupChat
+                ? `${chat.participants?.length || 0} members`
+                : chat.status === 'online'
+                  ? '● Active now'
+                  : chat.userRole
+                    ? (badge ? badge.label : chat.userRole)
+                    : '● Offline'}
+              {!chat.isGroupChat && chat.company && ` · ${chat.company}`}
+            </div>
+          </div>
         </div>
-    );
+      </div>
+
+      <div className="msg-window__header-right" ref={menuRef} style={{ position: 'relative' }}>
+        <button className="msg-icon-btn" title="Voice call" onClick={() => onVoiceCall && onVoiceCall(chat)}>
+          <i className="fas fa-phone-alt" />
+        </button>
+        <button className="msg-icon-btn" title="More options" onClick={(e) => { e.stopPropagation(); setShowMenu(p => !p); }}>
+          <i className="fas fa-ellipsis-h" />
+        </button>
+
+        {showMenu && (
+          <div className="msg-dropdown">
+            <button
+              className="msg-dropdown__item"
+              onClick={() => { onClearChat && onClearChat(); setShowMenu(false); }}
+            >
+              <i className="fas fa-eraser text-muted" style={{ width: 16 }} />
+              Clear Chat
+            </button>
+            <button
+              className="msg-dropdown__item msg-dropdown__item--danger"
+              onClick={() => { onDeleteChat && onDeleteChat(); setShowMenu(false); }}
+            >
+              <i className="fas fa-trash-alt" style={{ width: 16 }} />
+              Delete Conversation
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
-ChatWindow.Input = function ChatWindowInput({ value, onChange, onSend, disabled, blockedMessage }) {
-    const [showEmoji, setShowEmoji] = React.useState(false);
-    const fileRef = React.useRef(null);
-    const EMOJIS = ['😊', '😂', '❤️', '👍', '🎉', '🙏', '😍', '🔥', '👏', '😢', '😮', '🤔', '💪', '✅', '🚀', '😁', '🙌', '💯', '🤝', '😎'];
+// ── Date separator ─────────────────────────────────────────────
+const DateSeparator = ({ label }) => (
+  <div className="msg-date-sep">
+    <div className="msg-date-sep__line" />
+    <span className="msg-date-sep__label">{label}</span>
+    <div className="msg-date-sep__line" />
+  </div>
+);
 
-    // Task 3: If this chat is blocked (not a connection), show a lock banner
-    if (disabled && blockedMessage) {
+// ── Single bubble ──────────────────────────────────────────────
+export const ChatBubble = ({ msg, isMine, isLastInGroup }) => {
+  const time = msg.createdAt
+    ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : msg.timestamp
+      ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : '';
+
+  return (
+    <div className={`msg-bubble-wrap ${isMine ? 'msg-bubble-wrap--mine' : 'msg-bubble-wrap--theirs'} ${isLastInGroup ? 'msg-bubble-wrap--gap-top' : ''}`}>
+      <div className={`msg-bubble ${isMine ? 'msg-bubble--mine' : 'msg-bubble--theirs'}`}>
+        {msg.text}
+        <div className="msg-bubble__meta">
+          <span>{time}</span>
+          {isMine && (
+            <span className={`msg-bubble__tick ${msg.isRead ? 'msg-bubble__tick--seen' : ''}`}>
+              {msg.isRead ? '✓✓' : '✓'}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Messages panel ─────────────────────────────────────────────
+ChatWindow.Messages = function ChatWindowMessages({ messages, currentUserId, onLoadMore, hasMore, isLoadingMore }) {
+  const scrollRef = useRef(null);
+  const endRef    = useRef(null);
+  const prevScrollHeight = useRef(null);
+
+  // Auto-scroll to bottom when new messages arrive (not when loading older ones)
+  useEffect(() => {
+    if (!isLoadingMore) {
+      endRef.current?.scrollIntoView({ behavior: 'auto' });
+    }
+  }, [messages, isLoadingMore]);
+
+  // Restore scroll position after prepending older messages
+  useEffect(() => {
+    if (!isLoadingMore && prevScrollHeight.current && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight - prevScrollHeight.current;
+      prevScrollHeight.current = null;
+    }
+  }, [messages, isLoadingMore]);
+
+  const handleScroll = (e) => {
+    if (e.target.scrollTop === 0 && hasMore && !isLoadingMore && onLoadMore) {
+      prevScrollHeight.current = e.target.scrollHeight;
+      onLoadMore();
+    }
+  };
+
+  return (
+    <div ref={scrollRef} onScroll={handleScroll} className="msg-messages">
+      {isLoadingMore && (
+        <div className="msg-load-more">
+          <span className="spinner-border spinner-border-sm text-secondary" role="status" />
+        </div>
+      )}
+
+      {messages.map((msg, idx) => {
+        const prev = messages[idx - 1];
+        const isMine = msg.senderId?._id === currentUserId || msg.senderId === currentUserId;
+        const showDate = !isSameDay(prev?.createdAt || prev?.timestamp, msg.createdAt || msg.timestamp);
+        // New group if: first message, different sender from prev, or big time gap
+        const prevSenderId = prev?.senderId?._id || prev?.senderId;
+        const curSenderId  = msg.senderId?._id  || msg.senderId;
+        const isNewGroup   = !prev || prevSenderId !== curSenderId || showDate;
+
         return (
-            <div className="px-3 py-3 bg-white border-top flex-shrink-0">
-                <div
-                    className="d-flex align-items-center gap-3 rounded-3 px-4 py-3"
-                    style={{ backgroundColor: '#fff8e1', border: '1px solid #ffe082' }}
-                >
-                    <i className="fas fa-lock text-warning flex-shrink-0"></i>
-                    <span style={{ fontSize: '0.85rem', color: '#555' }}>{blockedMessage}</span>
-                </div>
-            </div>
+          <React.Fragment key={msg._id || msg.id || idx}>
+            {showDate && <DateSeparator label={formatDateSep(msg.createdAt || msg.timestamp)} />}
+            <ChatBubble msg={msg} isMine={isMine} isLastInGroup={isNewGroup} />
+          </React.Fragment>
         );
+      })}
+
+      <div ref={endRef} style={{ height: 1 }} />
+    </div>
+  );
+};
+
+// ── Input bar ──────────────────────────────────────────────────
+ChatWindow.Input = function ChatWindowInput({ value, onChange, onSend, disabled, blockedMessage, onSendConnectionRequest, isSendingRequest }) {
+  const [showEmoji, setShowEmoji] = useState(false);
+  const fileRef = useRef(null);
+  const EMOJIS = ['😊','😂','❤️','👍','🎉','🙏','😍','🔥','👏','😢','😮','🤔','💪','✅','🚀','😁','🙌','💯','🤝','😎'];
+
+  // Blocked / not-connected state
+  if (disabled && blockedMessage) {
+    return (
+      <div className="msg-blocked-bar">
+        <div className="msg-blocked-alert">
+          <i className="fas fa-lock msg-blocked-alert__icon" />
+          <span className="msg-blocked-alert__text">{blockedMessage}</span>
+          {onSendConnectionRequest && (
+            <button
+              className="msg-connect-btn"
+              onClick={onSendConnectionRequest}
+              disabled={isSendingRequest}
+            >
+              {isSendingRequest ? (
+                <><span className="spinner-border spinner-border-sm me-1" role="status" />Sending…</>
+              ) : 'Connect'}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const handleKey = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); }
+  };
+
+  const addEmoji = (emoji) => {
+    onChange(value + emoji);
+    setShowEmoji(false);
+  };
+
+  // Auto-resize textarea
+  const handleChange = (e) => {
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    onChange(el.value);
+  };
+
+  return (
+    <div className="msg-input-bar">
+      {showEmoji && (
+        <div className="msg-emoji-picker">
+          {EMOJIS.map(emoji => (
+            <button key={emoji} className="msg-emoji-btn" onClick={() => addEmoji(emoji)}>{emoji}</button>
+          ))}
+        </div>
+      )}
+      <div className="msg-input-inner">
+        <div className="msg-input-icons">
+          <button
+            className="msg-input-icon-btn"
+            title="Attach file"
+            onClick={() => fileRef.current?.click()}
+          >
+            <i className="fa-solid fa-paperclip" />
+          </button>
+          <input ref={fileRef} type="file" className="d-none" accept="image/*,.pdf,.doc,.docx" />
+          <button
+            className={`msg-input-icon-btn ${showEmoji ? 'msg-input-icon-btn--active' : ''}`}
+            title="Emoji"
+            onClick={() => setShowEmoji(p => !p)}
+          >
+            <i className="fa-regular fa-face-smile" />
+          </button>
+        </div>
+
+        <textarea
+          className="msg-textarea"
+          rows={1}
+          placeholder="Write a message…"
+          value={value}
+          onChange={handleChange}
+          onKeyDown={handleKey}
+          id="msg-text-input"
+          aria-label="Message input"
+        />
+
+        <button
+          className={`msg-send-btn ${!value.trim() ? 'msg-send-btn--dim' : ''}`}
+          onClick={onSend}
+          title="Send"
+          disabled={!value.trim()}
+          aria-label="Send message"
+        >
+          <i className="fas fa-paper-plane" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
+// PROFILE PREVIEW PANEL (right column on desktop)
+// ============================================================
+export const ProfilePreviewPanel = ({ chat, onClose }) => {
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    if (!chat?.otherUserId || chat.isGroupChat) {
+      setLoading(false);
+      return;
     }
 
-    const handleKey = e => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); }
-    };
+    userService.getById(chat.otherUserId)
+      .then(({ data }) => { if (!cancelled) setProfile(data.data || data); })
+      .catch(() => { if (!cancelled) setProfile(null); })
+      .finally(() => { if (!cancelled) setLoading(false); });
 
-    const addEmoji = (emoji) => {
-        onChange(value + emoji);
-        setShowEmoji(false);
-    };
+    return () => { cancelled = true; };
+  }, [chat?.otherUserId, chat?.isGroupChat]);
 
-    return (
-        <div className="px-2 px-md-3 py-2 bg-white border-top flex-shrink-0" style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}>
-            {/* Emoji picker popup */}
-            {showEmoji && (
-                <div
-                    className="bg-white rounded-3 p-2 mb-2 d-flex flex-wrap gap-1"
-                    style={{ border: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0,0,0,0.12)', maxWidth: '300px' }}
-                >
-                    {EMOJIS.map(emoji => (
-                        <button
-                            key={emoji}
-                            className="btn p-1"
-                            style={{ fontSize: '1.2rem', lineHeight: 1, border: 'none', background: 'none' }}
-                            onClick={() => addEmoji(emoji)}
-                        >
-                            {emoji}
-                        </button>
-                    ))}
-                </div>
+  const handleViewProfile = () => {
+    if (chat?.otherUserId) navigate(`/profile/${chat.otherUserId}`);
+  };
+
+  const badge = getRoleBadge(chat?.userRole, chat?.isGroupChat);
+
+  return (
+    <div className="msg-profile-panel">
+      <div className="msg-profile-panel__header">
+        <h6 className="msg-profile-panel__title">Profile Info</h6>
+        <button className="msg-profile-panel__close" onClick={onClose} title="Close panel">
+          <i className="fas fa-times" />
+        </button>
+      </div>
+
+      <div className="msg-profile-panel__body">
+        {/* Avatar */}
+        <div className="msg-profile-panel__avatar">
+          {profile?.profilePic
+            ? <img src={profile.profilePic} alt={chat?.userName} />
+            : <span>{(chat?.userName || 'U').charAt(0).toUpperCase()}</span>
+          }
+        </div>
+
+        {/* Name */}
+        <div className="msg-profile-panel__name">{chat?.userName}</div>
+
+        {/* Role badge */}
+        {badge && <span className={badge.className}><i className={`fas ${badge.icon}`} style={{ fontSize: '0.6rem' }} />{badge.label}</span>}
+
+        {loading ? (
+          /* Skeleton rows while loading */
+          <div className="msg-profile-panel__info" style={{ width: '100%' }}>
+            {[80, 65, 55].map((w, i) => (
+              <div key={i} style={{ height: 12, background: '#f0f0f0', borderRadius: 6, width: `${w}%`, marginBottom: 6 }} />
+            ))}
+          </div>
+        ) : profile ? (
+          <>
+            {profile.bio && (
+              <p className="msg-profile-panel__bio">{profile.bio}</p>
             )}
-
-            <div
-                className="d-flex align-items-end gap-2 rounded-3 px-3 py-2"
-                style={{ backgroundColor: '#f3f2ef', border: '1px solid #ddd' }}
-            >
-                {/* Left icons: emoji + attachment */}
-                <div className="d-flex gap-2 align-self-end pb-1 flex-shrink-0">
-                    {/* Attachment/Paperclip */}
-                    <button
-                        className="btn p-0 border-0"
-                        style={{ color: '#555', background: 'none', lineHeight: 1, width: '26px', fontSize: '1rem' }}
-                        title="Attach file"
-                        onClick={() => fileRef.current?.click()}
-                    >
-                        <i className="fa-solid fa-paperclip"></i>
-                    </button>
-                    <input ref={fileRef} type="file" className="d-none" accept="image/*,.pdf,.doc,.docx" />
-
-                    {/* Emoji / Smiley */}
-                    <button
-                        className="btn p-0 border-0"
-                        style={{ color: showEmoji ? '#c84022' : '#555', background: 'none', lineHeight: 1, width: '26px', fontSize: '1rem' }}
-                        title="Emoji"
-                        onClick={() => setShowEmoji(prev => !prev)}
-                    >
-                        <i className="fa-regular fa-face-smile"></i>
-                    </button>
+            <div className="msg-profile-panel__info">
+              {profile.department && (
+                <div className="msg-profile-panel__row">
+                  <i className="fas fa-building msg-profile-panel__row-icon" />
+                  <span className="msg-profile-panel__row-text">{profile.department}</span>
                 </div>
-
-                {/* Textarea */}
-                <textarea
-                    className="form-control border-0 bg-transparent p-0 flex-grow-1"
-                    rows={1}
-                    placeholder="Write a message…"
-                    value={value}
-                    onChange={e => onChange(e.target.value)}
-                    onKeyPress={handleKey}
-                    style={{ resize: 'none', minHeight: '26px', maxHeight: '100px', fontSize: '0.9rem', boxShadow: 'none', outline: 'none' }}
-                />
-
-                {/* Send button — always red, sends on click */}
-                <button
-                    onClick={onSend}
-                    title="Send"
-                    className="btn rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 align-self-end"
-                    style={{
-                        width: '36px', height: '36px',
-                        backgroundColor: '#c84022',
-                        color: 'white',
-                        border: 'none',
-                        opacity: value.trim() ? 1 : 0.45,
-                        transition: 'opacity 0.2s',
-                        fontSize: '0.85rem',
-                        cursor: value.trim() ? 'pointer' : 'default'
-                    }}
-                >
-                    ➤
-                </button>
+              )}
+              {profile.batch && (
+                <div className="msg-profile-panel__row">
+                  <i className="fas fa-calendar-alt msg-profile-panel__row-icon" />
+                  <span className="msg-profile-panel__row-text">Batch of {profile.batch}</span>
+                </div>
+              )}
+              {profile.company && (
+                <div className="msg-profile-panel__row">
+                  <i className="fas fa-briefcase msg-profile-panel__row-icon" />
+                  <span className="msg-profile-panel__row-text">{profile.company}</span>
+                </div>
+              )}
+              {profile.designation && (
+                <div className="msg-profile-panel__row">
+                  <i className="fas fa-user-tie msg-profile-panel__row-icon" />
+                  <span className="msg-profile-panel__row-text">{profile.designation}</span>
+                </div>
+              )}
             </div>
+          </>
+        ) : (
+          <p className="msg-profile-panel__bio">No additional profile info available.</p>
+        )}
+
+        <div className="msg-profile-panel__actions">
+          <button className="msg-view-profile-btn" onClick={handleViewProfile}>
+            <i className="fas fa-external-link-alt me-2" style={{ fontSize: '0.8rem' }} />
+            View Full Profile
+          </button>
         </div>
-    );
-};
-
-/**
- * ChatBubble — Individual message bubble
- */
-export const ChatBubble = ({ msg, isMine }) => {
-    const time = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : msg.timestamp;
-    return (
-        <div className={`d-flex flex-column ${isMine ? 'align-items-end' : 'align-items-start'}`}>
-            <div
-                className="px-3 py-2"
-                style={{
-                    maxWidth: '85%',
-                    backgroundColor: isMine ? '#c84022' : '#ffffff',
-                    color: isMine ? 'white' : '#333',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                    fontSize: '0.88rem',
-                    lineHeight: '1.4',
-                    wordBreak: 'break-word',
-                    // Compact bubble shape
-                    borderRadius: isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                }}
-            >
-                {msg.text}
-                <div 
-                    className={`d-flex mt-1 align-items-center ${isMine ? 'justify-content-end text-white-50' : 'justify-content-start text-muted'}`} 
-                    style={{ fontSize: '0.65rem' }}
-                >
-                    {time}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-/**
- * CallModal — Persistent bottom-right voice call widget
- */
-ChatWindow.CallModal = function ChatWindowCallModal({ chat, onEndCall }) {
-    const [isMuted, setIsMuted] = React.useState(false);
-    const [isSpeakerOn, setIsSpeakerOn] = React.useState(false);
-
-    if (!chat) return null;
-
-    return (
-        <div
-            className="position-fixed"
-            style={{
-                zIndex: 2000,
-                bottom: '24px',
-                right: '24px',
-                animation: 'slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-            }}
-        >
-            <div
-                className="bg-white rounded-4 shadow-lg p-3 d-flex flex-column align-items-center gap-3 border"
-                style={{ width: '220px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}
-            >
-                {/* Header with name and status */}
-                <div className="d-flex align-items-center gap-2 w-100">
-                    <div
-                        className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                        style={{ width: '32px', height: '32px', backgroundColor: '#c84022', fontSize: '0.8rem' }}
-                    >
-                        {chat.userInitial}
-                    </div>
-                    <div className="overflow-hidden">
-                        <div className="fw-bold text-dark text-truncate" style={{ fontSize: '0.85rem' }}>{chat.userName}</div>
-                        <div className="text-mamcet-red extra-small fw-semibold animate-pulse">Calling...</div>
-                    </div>
-                </div>
-
-                {/* Call Controls */}
-                <div className="d-flex gap-3">
-                    <button
-                        className={`btn rounded-circle d-flex align-items-center justify-content-center border-0 ${isMuted ? 'bg-danger text-white' : 'btn-light text-muted'}`}
-                        style={{ width: '40px', height: '40px' }}
-                        title={isMuted ? "Unmute" : "Mute"}
-                        onClick={() => setIsMuted(!isMuted)}
-                    >
-                        <i className={`fas ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'}`}></i>
-                    </button>
-                    <button
-                        className={`btn rounded-circle d-flex align-items-center justify-content-center border-0 ${isSpeakerOn ? 'bg-primary text-white' : 'btn-light text-muted'}`}
-                        style={{ width: '40px', height: '40px' }}
-                        title={isSpeakerOn ? "Speaker Off" : "Speaker On"}
-                        onClick={() => setIsSpeakerOn(!isSpeakerOn)}
-                    >
-                        <i className={`fas ${isSpeakerOn ? 'fa-volume-up' : 'fa-volume-down'}`}></i>
-                    </button>
-                    <button
-                        onClick={onEndCall}
-                        className="btn btn-danger rounded-circle d-flex align-items-center justify-content-center border-0 shadow-sm"
-                        style={{ width: '40px', height: '40px', backgroundColor: '#dc3545' }}
-                        title="End Call"
-                    >
-                        <i className="fas fa-phone-slash" style={{ transform: 'rotate(225deg)', fontSize: '0.9rem' }}></i>
-                    </button>
-                </div>
-            </div>
-
-            <style>{`
-                @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-                @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-                .animate-pulse { animation: pulse 1.5s infinite ease-in-out; }
-            `}</style>
-        </div>
-    );
-};
-
-/**
- * EmptyState — When no chat is selected
- */
-export const ChatEmptyState = () => (
-    <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted gap-3">
-        <div
-            className="rounded-circle d-flex align-items-center justify-content-center"
-            style={{ width: '72px', height: '72px', backgroundColor: '#e8e8e8' }}
-        >
-            <i className="fas fa-comments" style={{ fontSize: '1.8rem', color: '#aaa' }}></i>
-        </div>
-        <div className="text-center">
-            <div className="fw-semibold text-dark mb-1">Your Messages</div>
-            <div style={{ fontSize: '0.85rem' }}>Select a conversation to start chatting</div>
-        </div>
+      </div>
     </div>
+  );
+};
+
+// ============================================================
+// CALL MODAL
+// ============================================================
+ChatWindow.CallModal = function ChatWindowCallModal({ chat, onEndCall }) {
+  const [isMuted, setIsMuted] = useState(false);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
+  if (!chat) return null;
+
+  return (
+    <div className="msg-call-modal">
+      <div className="msg-call-card">
+        <div className="d-flex align-items-center gap-2">
+          <MsgAvatar name={chat.userName} profilePic={chat.profilePic} size={32} />
+          <div className="overflow-hidden">
+            <div className="fw-bold text-dark text-truncate" style={{ fontSize: '0.85rem' }}>{chat.userName}</div>
+            <div style={{ fontSize: '0.72rem', color: '#c8102e' }} className="animate-pulse">Calling…</div>
+          </div>
+        </div>
+        <div className="d-flex gap-3 justify-content-center">
+          <button
+            className={`btn rounded-circle d-flex align-items-center justify-content-center border-0 ${isMuted ? 'bg-danger text-white' : 'btn-light text-muted'}`}
+            style={{ width: 40, height: 40 }}
+            title={isMuted ? 'Unmute' : 'Mute'}
+            onClick={() => setIsMuted(p => !p)}
+          >
+            <i className={`fas ${isMuted ? 'fa-microphone-slash' : 'fa-microphone'}`} />
+          </button>
+          <button
+            className={`btn rounded-circle d-flex align-items-center justify-content-center border-0 ${isSpeakerOn ? 'bg-primary text-white' : 'btn-light text-muted'}`}
+            style={{ width: 40, height: 40 }}
+            title={isSpeakerOn ? 'Speaker Off' : 'Speaker On'}
+            onClick={() => setIsSpeakerOn(p => !p)}
+          >
+            <i className={`fas ${isSpeakerOn ? 'fa-volume-up' : 'fa-volume-down'}`} />
+          </button>
+          <button
+            className="btn btn-danger rounded-circle d-flex align-items-center justify-content-center border-0"
+            style={{ width: 40, height: 40 }}
+            title="End Call"
+            onClick={onEndCall}
+          >
+            <i className="fas fa-phone-slash" style={{ transform: 'rotate(225deg)', fontSize: '0.85rem' }} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
+// EMPTY STATE — no chat selected
+// ============================================================
+export const ChatEmptyState = () => (
+  <div className="msg-empty-state">
+    <div className="msg-empty-state__icon-wrap">
+      <i className="fas fa-comments msg-empty-state__icon" />
+    </div>
+    <h5 className="msg-empty-state__title">Your Messages</h5>
+    <p className="msg-empty-state__desc">
+      Select a conversation from the left, or start a new one by clicking the ✏️ icon.
+    </p>
+  </div>
 );
 
+// ── Typing indicator bar ───────────────────────────────────────
+export const TypingIndicator = ({ name }) => (
+  <div className="msg-typing-bar">
+    <div className="msg-typing-dots">
+      <span /><span /><span />
+    </div>
+    <span>{name} is typing…</span>
+  </div>
+);
+
+// Default export for backward compat
 const Messaging = {
-    ChatSidebar,
-    ChatItem,
-    ChatWindow,
-    ChatBubble,
-    ChatEmptyState
+  ChatSidebar,
+  ChatItem,
+  ChatWindow,
+  ChatBubble,
+  ChatEmptyState,
+  ProfilePreviewPanel,
+  TypingIndicator,
+  UserResultItem,
+  MsgAvatar,
 };
 
 export default Messaging;
