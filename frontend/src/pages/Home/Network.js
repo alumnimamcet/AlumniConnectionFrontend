@@ -342,182 +342,211 @@ const ProfilePreviewModal = ({ userId, onClose, onConnect, actionLoading, connec
 };
 
 /* ─────────────────────────────────────────────────────────────
-   USER CARD
+   PROFILE CARD  —  Compact LinkedIn-style, MAMCET theme
+   Unified for: Suggestions · My Connections · Search results
 ───────────────────────────────────────────────────────────── */
-const UserCard = ({ user, type, onAction, actionLoading, connected, pending, onPreview }) => {
-  const picUrl     = user?.profilePic || '';
-  const initials   = (user?.name || '?')[0].toUpperCase();
-  const mutuals    = user?.mutualConnections || 0;
+const ProfileCard = ({
+  user,
+  type,           // 'suggestion' | 'connection'
+  onAction,       // send connect (suggestion mode)
+  actionLoading,
+  connected,
+  pending,
+  onPreview,
+  /* search-mode prop aliases */
+  onConnect,
+  connectedIds,
+  pendingIds,
+}) => {
+  /* Normalise — works whether called as UserCard or SearchResultRow */
+  const isConnected   = connected   ?? connectedIds?.has(user._id) ?? false;
+  const isPending     = pending     ?? pendingIds?.has(user._id)   ?? false;
+  const handleConnect = onAction    ?? onConnect                   ?? (() => {});
+
+  const picUrl   = user?.profilePic || '';
+  const initials = (user?.name || '?')[0].toUpperCase();
+  const isAlumni = user?.role === 'alumni';
+
+  /* One-line subtitle: "CSE Engg. • 2022 • @ Zoho" */
+  const subtitleParts = [
+    user.department ? user.department.replace('Engineering', 'Engg.').slice(0, 26) : null,
+    user.batch      ? user.batch      : null,
+    user.company    ? `@ ${user.company}` : (user.designation || null),
+  ].filter(Boolean);
+
+  const [hovered, setHovered] = React.useState(false);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
-      {/* Banner */}
-      <div className="h-16 bg-gradient-to-r from-red-50 to-red-100 w-full relative">
-        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2">
-          <div
-            onClick={() => onPreview(user._id)}
-            className="w-16 h-16 rounded-full border-4 border-white bg-white overflow-hidden shadow-sm cursor-pointer flex items-center justify-center text-xl font-bold text-red-600 select-none"
-          >
-            {picUrl
-              ? <img src={picUrl} alt={user.name} className="w-full h-full object-cover" onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} />
-              : initials}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 px-4 pt-10 pb-4 text-center flex flex-col">
-        {/* Name */}
-        <h3
-          className="font-bold text-gray-900 text-[15px] hover:text-red-700 cursor-pointer transition line-clamp-1"
-          onClick={() => onPreview(user._id)}
-        >
-          {user.name}
-        </h3>
-
-        {/* Role badge */}
-        <span className={`inline-block mt-1 text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full ${user.role === 'alumni' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
-          {user.role}
-        </span>
-
-        {/* Dept + Batch */}
-        <p className="text-[12px] text-gray-500 mt-2 line-clamp-2 min-h-[34px] leading-relaxed">
-          {user.department || '—'}
-          {user.batch ? <span className="text-gray-400"> · Batch {user.batch}</span> : null}
-        </p>
-
-        {/* Company (alumni) */}
-        {user.role === 'alumni' && user.company && (
-          <div className="flex items-center justify-center gap-1 text-[11px] text-gray-600 font-medium mt-1">
-            <FiBriefcase size={10} />
-            <span className="line-clamp-1">{user.company}</span>
-          </div>
-        )}
-
-        {/* Designation (student higher-ed) */}
-        {user.role === 'student' && user.designation && (
-          <p className="text-[11px] text-gray-400 mt-1 line-clamp-1">{user.designation}</p>
-        )}
-
-        {/* Mutual connections badge */}
-        {mutuals > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 11, color: '#6b7280', marginTop: 4 }}>
-            <FiUsers size={10} />
-            <span>{mutuals} mutual connection{mutuals !== 1 ? 's' : ''}</span>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="mt-auto pt-4 flex gap-2">
-          <button
-            onClick={() => onPreview(user._id)}
-            className="flex-1 py-1.5 px-3 border border-red-200 text-red-600 font-semibold rounded-full text-xs hover:bg-red-50 transition"
-          >
-            View Profile
-          </button>
-
-          {/* ── 3-STATE CONNECT BUTTON ── */}
-          {type === 'suggestion' && (
-            connected ? (
-              <span className="flex-1 py-1.5 px-3 border border-green-200 text-green-700 font-semibold rounded-full text-xs flex items-center justify-center gap-1">
-                <FiUserCheck size={12} /> Connected
-              </span>
-            ) : pending ? (
-              <span className="flex-1 py-1.5 px-3 border border-gray-200 text-gray-500 font-semibold rounded-full text-xs flex items-center justify-center gap-1 cursor-default">
-                <FiClock size={11}/> Pending
-              </span>
-            ) : (
-              <button
-                disabled={actionLoading === user._id}
-                onClick={() => onAction(user._id)}
-                className="flex-1 py-1.5 px-3 bg-red-600 text-white font-semibold rounded-full text-xs hover:bg-red-700 active:scale-95 transition disabled:opacity-60 flex items-center justify-center gap-1"
-              >
-                {actionLoading === user._id
-                  ? <><span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Sending…</>
-                  : <><FiUserPlus size={12} /> Connect</>}
-              </button>
-            )
-          )}
-
-          {type === 'connection' && (
-            <button
-              onClick={() => onPreview(user._id)}
-              className="flex-1 py-1.5 px-3 bg-white border border-gray-300 text-gray-700 font-semibold rounded-full text-xs hover:bg-gray-50 transition"
-            >
-              Message
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/* ─────────────────────────────────────────────────────────────
-   SEARCH RESULT ROW  (compact list for search mode)
-───────────────────────────────────────────────────────────── */
-const SearchResultRow = ({ user, onConnect, actionLoading, connectedIds, pendingIds, onPreview }) => {
-  const isConn    = connectedIds.has(user._id);
-  const isPending = pendingIds.has(user._id);
-  const picUrl    = user?.profilePic || '';
-  const initials  = (user?.name || '?')[0].toUpperCase();
-
-  return (
-    <div className="flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 transition">
-      {/* Avatar */}
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '11px 14px',
+        background: hovered ? '#fafafa' : '#fff',
+        border: `1px solid ${hovered ? '#d1d5db' : '#e5e7eb'}`,
+        borderRadius: 12,
+        transition: 'background 0.15s, border-color 0.15s',
+      }}
+    >
+      {/* ── Avatar ── */}
       <div
         onClick={() => onPreview(user._id)}
-        className="w-12 h-12 rounded-full border-2 border-white shadow-sm bg-red-50 overflow-hidden flex items-center justify-center text-base font-bold text-red-600 cursor-pointer flex-shrink-0"
+        style={{
+          width: 40, height: 40, borderRadius: '50%',
+          flexShrink: 0, overflow: 'hidden',
+          background: isAlumni ? '#fef2f2' : '#f1f5f9',
+          border: '1.5px solid #e5e7eb',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 15, fontWeight: 700,
+          color: isAlumni ? '#c84022' : '#475569',
+          cursor: 'pointer',
+        }}
       >
         {picUrl
-          ? <img src={picUrl} alt={user.name} className="w-full h-full object-cover" onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} />
+          ? <img
+              src={picUrl}
+              alt={user.name}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }}
+            />
           : initials}
       </div>
 
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+      {/* ── Info ── */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Name + badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <span
-            className="font-semibold text-gray-900 text-sm hover:text-red-700 cursor-pointer transition line-clamp-1"
             onClick={() => onPreview(user._id)}
+            style={{
+              fontWeight: 600, fontSize: 13.5, color: '#111827',
+              cursor: 'pointer', lineHeight: 1.3,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              maxWidth: '100%',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#c84022'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#111827'; }}
           >
             {user.name}
           </span>
-          <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full flex-shrink-0 ${user.role === 'alumni' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
-            {user.role}
+          <span style={{
+            fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
+            letterSpacing: '0.6px', flexShrink: 0,
+            padding: '2px 7px', borderRadius: 20,
+            background: isAlumni ? '#c84022' : '#f1f5f9',
+            color: isAlumni ? '#fff' : '#64748b',
+            border: isAlumni ? 'none' : '1px solid #e2e8f0',
+          }}>
+            {isAlumni ? 'Alumni' : 'Student'}
           </span>
         </div>
-        <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
-          {user.department || '—'}
-          {user.batch ? ` · Batch ${user.batch}` : ''}
-          {user.company ? ` · ${user.company}` : ''}
-        </p>
-      </div>
 
-      {/* 3-state CTA */}
-      <div className="flex-shrink-0">
-        {isConn ? (
-          <span className="flex items-center gap-1 text-xs font-semibold text-green-600">
-            <FiUserCheck size={13} /> Connected
-          </span>
-        ) : isPending ? (
-          <span className="flex items-center gap-1 text-xs font-semibold text-gray-500">
-            <FiClock size={12} /> Pending
-          </span>
-        ) : (
-          <button
-            disabled={actionLoading === user._id}
-            onClick={() => onConnect(user._id)}
-            className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-full text-xs font-semibold hover:bg-red-700 active:scale-95 transition disabled:opacity-60"
-          >
-            {actionLoading === user._id
-              ? <><span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Sending…</>
-              : <><FiUserPlus size={11} /> Connect</>}
-          </button>
+        {/* One-line subtitle */}
+        {subtitleParts.length > 0 && (
+          <p style={{
+            fontSize: 11.5, color: '#6b7280',
+            margin: '2px 0 0',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {subtitleParts.map((part, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <span style={{ color: '#d1d5db', margin: '0 3px' }}>•</span>}
+                {part.startsWith('@')
+                  ? <span style={{ color: '#374151', fontWeight: 600 }}>{part}</span>
+                  : part}
+              </React.Fragment>
+            ))}
+          </p>
         )}
       </div>
+
+      {/* ── Actions ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+        {/* View link */}
+        <button
+          onClick={() => onPreview(user._id)}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: '#6b7280', fontSize: 11.5, fontWeight: 600, padding: '4px 6px',
+            borderRadius: 6, transition: 'color 0.12s', whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#c84022'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#6b7280'; }}
+        >
+          View
+        </button>
+
+        {/* Connect/state — shown for suggestions and search results */}
+        {(type === 'suggestion' || onConnect) && (
+          isConnected ? (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              fontSize: 11.5, fontWeight: 600, color: '#16a34a',
+              padding: '4px 10px', borderRadius: 6,
+              background: '#f0fdf4', border: '1px solid #bbf7d0', whiteSpace: 'nowrap',
+            }}>
+              <FiUserCheck size={11} /> Connected
+            </span>
+          ) : isPending ? (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              fontSize: 11.5, fontWeight: 600, color: '#9ca3af',
+              padding: '4px 10px', borderRadius: 6,
+              background: '#f9fafb', border: '1px solid #e5e7eb', whiteSpace: 'nowrap',
+            }}>
+              <FiClock size={11} /> Pending
+            </span>
+          ) : (
+            <button
+              disabled={actionLoading === user._id}
+              onClick={() => handleConnect(user._id)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                fontSize: 11.5, fontWeight: 700, whiteSpace: 'nowrap',
+                padding: '5px 12px', borderRadius: 6, border: 'none',
+                background: actionLoading === user._id ? '#e5e7eb' : '#c84022',
+                color: actionLoading === user._id ? '#9ca3af' : '#fff',
+                cursor: actionLoading === user._id ? 'default' : 'pointer',
+                transition: 'background 0.15s',
+                opacity: actionLoading === user._id ? 0.75 : 1,
+              }}
+              onMouseEnter={e => {
+                if (actionLoading !== user._id) e.currentTarget.style.background = '#a5311a';
+              }}
+              onMouseLeave={e => {
+                if (actionLoading !== user._id) e.currentTarget.style.background = '#c84022';
+              }}
+            >
+              {actionLoading === user._id ? (
+                <>
+                  <span style={{
+                    width: 10, height: 10, borderRadius: '50%',
+                    border: '2px solid #9ca3af', borderTopColor: '#374151',
+                    display: 'inline-block',
+                    animation: 'pc-spin 0.7s linear infinite',
+                  }} />
+                  …
+                </>
+              ) : (
+                <><FiUserPlus size={11} /> Connect</>
+              )}
+            </button>
+          )
+        )}
+      </div>
+
+      <style>{`@keyframes pc-spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };
+
+/* Backward-compatible aliases — existing JSX call sites need no changes */
+const UserCard = (props) => <ProfileCard {...props} />;
+const SearchResultRow = (props) => <ProfileCard {...props} />;
+
 
 /* ─────────────────────────────────────────────────────────────
    MAIN NETWORK PAGE
@@ -934,7 +963,7 @@ const Network = () => {
                     No new alumni suggestions right now.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {suggestedAlumni.map(u => (
                       <UserCard key={u._id} user={u} type="suggestion" onAction={handleConnect} actionLoading={actionLoading} connected={connectedSet.has(u._id)} pending={pendingSet.has(u._id)} onPreview={setPreviewUserId} />
                     ))}
@@ -957,7 +986,7 @@ const Network = () => {
                     No new student suggestions right now.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {suggestedStudents.map(u => (
                       <UserCard key={u._id} user={u} type="suggestion" onAction={handleConnect} actionLoading={actionLoading} connected={connectedSet.has(u._id)} pending={pendingSet.has(u._id)} onPreview={setPreviewUserId} />
                     ))}
@@ -994,7 +1023,7 @@ const Network = () => {
           ) : (
             <>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 14 }}>{myConnections.length} Connection{myConnections.length !== 1 ? 's' : ''}</div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {myConnections.map(u => <UserCard key={u._id} user={u} type="connection" onPreview={setPreviewUserId} />)}
               </div>
             </>
