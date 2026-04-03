@@ -97,12 +97,13 @@ export const userService = {
 
 // ─── Post / Feed Service ──────────────────────────────────────
 export const postService = {
-  getFeed:    ()                    => api.get('/posts'),
-  createPost: (formData)            => api.post('/posts', formData),
-  likePost:   (postId)              => api.put(`/posts/${postId}/like`),
-  addComment: (postId, content)     => api.post(`/posts/${postId}/comment`, { content }),
-  deletePost: (postId)              => api.delete(`/posts/${postId}`),
-  reportPost: (postId)              => api.post(`/posts/${postId}/report`),
+  getFeed:       ()                    => api.get('/posts'),
+  getUserPosts:  (userId)              => api.get(`/posts/user/${userId}`),
+  createPost:    (formData)            => api.post('/posts', formData),
+  likePost:      (postId)              => api.put(`/posts/${postId}/like`),
+  addComment:    (postId, content)     => api.post(`/posts/${postId}/comment`, { content }),
+  deletePost:    (postId)              => api.delete(`/posts/${postId}`),
+  reportPost:    (postId)              => api.post(`/posts/${postId}/report`),
 };
 
 // ─── Job Service ──────────────────────────────────────────────

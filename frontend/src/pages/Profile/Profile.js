@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { userService, connectionService, chatService } from '../../services/api';
+import { userService, connectionService, chatService, postService } from '../../services/api';
+import FeedItem from '../Alumni/components/FeedItem';
 import Toast from '../../components/common/Toast';
 import Modal from '../../components/common/Modal';
 import { ClipLoader } from 'react-spinners';
@@ -165,6 +166,10 @@ const Profile = () => {
   const [skillsInput, setSkillsInput]     = useState('');
   const [saving, setSaving]               = useState(false);
 
+  // ── User posts state ─────────────────────────────────────────
+  const [userPosts, setUserPosts]           = useState([]);
+  const [postsLoading, setPostsLoading]     = useState(false);
+
   const showToast = (message, type = 'info') => setToast({ message, type });
 
   // ── Derived flags ────────────────────────────────────────────
@@ -201,6 +206,20 @@ const Profile = () => {
       }
     };
     if (id) fetchAll();
+
+    // Fetch this user's posts (separate call so profile loads instantly)
+    const fetchPosts = async () => {
+      setPostsLoading(true);
+      try {
+        const res = await postService.getUserPosts(id);
+        setUserPosts(res.data.data || []);
+      } catch (_) {
+        // silently ignore — posts section just stays empty
+      } finally {
+        setPostsLoading(false);
+      }
+    };
+    if (id) fetchPosts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, me?._id]);
 
@@ -696,6 +715,50 @@ const Profile = () => {
                 )}
               </Section>
             )}
+
+            {/* ══ ACTIVITY / MY POSTS ═══════════════════════════════════ */}
+            <Section
+              title={isOwnProfile ? 'My Posts' : `Posts by ${profile.name?.split(' ')[0] || 'User'}`}
+              custom={5}
+            >
+              {postsLoading ? (
+                <div className="d-flex justify-content-center py-4">
+                  <ClipLoader color="#c84022" size={28} />
+                </div>
+              ) : userPosts.length === 0 ? (
+                <div className="text-center py-3">
+                  <p className="text-muted fst-italic mb-0">
+                    {isOwnProfile ? 'You haven\'t posted anything yet.' : 'No posts yet.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {userPosts.map(post => (
+                    <FeedItem
+                      key={post._id || post.id}
+                      post={post}
+                      onLike={async (postId) => {
+                        try {
+                          const res = await postService.likePost(postId);
+                          setUserPosts(prev =>
+                            prev.map(p => (p._id === postId || p.id === postId) ? { ...p, ...res.data.data } : p)
+                          );
+                        } catch (_) {}
+                      }}
+                      onComment={async (postId, content) => {
+                        try {
+                          const res = await postService.addComment(postId, content);
+                          setUserPosts(prev =>
+                            prev.map(p => (p._id === postId || p.id === postId) ? { ...p, ...res.data.data } : p)
+                          );
+                        } catch (_) {}
+                      }}
+                      onShare={() => {}}
+                    />
+                  ))}
+                </div>
+              )}
+            </Section>
 
           </div>{/* /col-lg-8 */}
 

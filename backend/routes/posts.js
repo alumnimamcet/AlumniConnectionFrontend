@@ -130,6 +130,31 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
 });
 
 
+// ─── GET /api/posts/user/:userId — Posts by a specific user ──
+router.get('/user/:userId', optionalAuth, async (req, res) => {
+  try {
+    const posts = await Post.find({ userId: req.params.userId })
+      .sort({ createdAt: -1 })
+      .populate('userId', 'name profilePic role designation');
+
+    const authUserId = req.user?._id;
+    const result = posts.map(post => {
+      const obj = post.toClientObject(authUserId);
+      if (post.userId && typeof post.userId === 'object') {
+        obj.userName  = post.userId.name;
+        obj.userPic   = post.userId.profilePic || '';
+        obj.userRole  = post.userId.designation || post.userId.role || '';
+        obj.authorId  = post.userId._id;
+      }
+      return obj;
+    });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch user posts.' });
+  }
+});
+
+
 // ─── PUT /api/posts/:id/like — Toggle like ────────────────────
 router.put('/:id/like', protect, async (req, res) => {
   try {
