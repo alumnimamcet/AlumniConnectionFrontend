@@ -36,7 +36,7 @@ import Events from './pages/Home/Events';
 import JobsAndEvents from './pages/Home/JobsAndEvents';
 import Messaging from './pages/Home/Messaging';
 import Notification from './pages/Home/Notification';
-import ConnectionRequests from './pages/Home/ConnectionRequests';
+import Network from './pages/Home/Network';
 
 // Student Pages
 import JobSearch from './pages/Student/JobSearch';
@@ -188,7 +188,7 @@ function App() {
                         <Route path="/events" element={<JobsAndEvents />} />
                         <Route path="/student/StudentEvents" element={<Navigate to="/opportunities?tab=events" replace />} />
                         <Route path="/Student/JobSearch" element={<Navigate to="/opportunities?tab=jobs" replace />} />
-                        <Route path="/requests" element={<ConnectionRequests />} />
+                        <Route path="/network" element={<Network />} />
                         <Route path="/messaging" element={<Messaging />} />
                         <Route path="/notifications" element={<Notification />} />
                       </Route>
