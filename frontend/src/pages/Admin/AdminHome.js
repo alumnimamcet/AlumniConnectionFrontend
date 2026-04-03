@@ -8,8 +8,8 @@ import { ClipLoader } from 'react-spinners';
 import { motion } from 'framer-motion';
 import {
     FaClipboardCheck, FaBriefcase, FaCalendarAlt,
-    FaUserShield, FaUsers, FaChartLine, FaNewspaper,
-    FaBell, FaUserPlus, FaUpload, FaTimes, FaCheck,
+    FaUserShield, FaChartLine, FaNewspaper,
+    FaBell, FaUserPlus, FaUpload, FaCheck,
 } from 'react-icons/fa';
 import { FiX, FiInfo, FiAlertTriangle } from 'react-icons/fi';
 

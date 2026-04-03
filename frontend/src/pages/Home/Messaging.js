@@ -10,7 +10,6 @@ import {
   ChatEmptyState
 } from '../../components/messaging';
 import { ChatListSkeleton, MessagesSkeleton, EmptyState } from '../../components/common/Skeletons';
-import ErrorBoundary from '../../components/common/ErrorBoundary';
 
 const Messaging = () => {
   const { user } = useAuth();

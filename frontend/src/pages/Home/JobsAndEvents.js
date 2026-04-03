@@ -8,7 +8,7 @@ import Toast from '../../components/common/Toast';
 import { ClipLoader } from 'react-spinners';
 import {
   FaBriefcase, FaCalendarAlt, FaMapMarkerAlt, FaClock,
-  FaPlus, FaFilter, FaBuilding, FaSearch, FaTimes,
+  FaPlus, FaBuilding, FaSearch, FaTimes,
   FaSlidersH, FaChevronDown
 } from 'react-icons/fa';
 

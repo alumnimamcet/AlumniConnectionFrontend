@@ -5,7 +5,7 @@ import {
   FiSearch, FiEdit2, FiTrash2,
   FiCheck, FiX, FiChevronLeft, FiChevronRight,
   FiChevronUp, FiChevronDown, FiRefreshCw, FiDownload,
-  FiUserCheck, FiUsers, FiClock, FiAlertTriangle,
+  FiUserCheck, FiClock, FiAlertTriangle,
   FiMail, FiBriefcase, FiMapPin, FiInfo, FiCheckCircle, FiXCircle,
 } from 'react-icons/fi';
 

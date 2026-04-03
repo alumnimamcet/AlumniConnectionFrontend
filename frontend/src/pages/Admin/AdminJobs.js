@@ -5,7 +5,7 @@ import {
   FiBriefcase, FiPlus, FiEdit2, FiTrash2, FiRefreshCw,
   FiSearch, FiX, FiCheck, FiAlertTriangle, FiChevronLeft,
   FiChevronRight, FiUsers, FiMapPin, FiClock, FiDollarSign,
-  FiInfo, FiCheckCircle, FiXCircle, FiEye,
+  FiInfo, FiCheckCircle, FiXCircle,
 } from 'react-icons/fi';
 
 /* ── Avatar colour ─────────────────────────────────────────────── */
@@ -381,8 +381,6 @@ const AdminJobs = () => {
   const [createSaving, setCreateSaving] = useState(false);
   const [editSaving,   setEditSaving]   = useState(false);
   const [delSaving,    setDelSaving]    = useState(false);
-  const [actionLoading, setActionLoading] = useState({});
-
   const { toasts, add: toast } = useToast();
   const timerRef = useRef(null);
 
@@ -460,7 +458,6 @@ const AdminJobs = () => {
 
   /* ── Approve ───────────────────────────────────────────────── */
   const handleApprove = async (job) => {
-    setActionLoading(p => ({ ...p, [job._id]: 'approving' }));
     try {
       await jobService.approveJob(job._id);
       setJobs(prev => prev.filter(j => j._id !== job._id));
@@ -468,7 +465,7 @@ const AdminJobs = () => {
       toast('✅ Job approved & published!', 'success');
     } catch {
       toast('Approve failed.', 'error');
-    } finally { setActionLoading(p => ({ ...p, [job._id]: null })); }
+    }
   };
 
   /* ── Pagination helpers ────────────────────────────────────── */

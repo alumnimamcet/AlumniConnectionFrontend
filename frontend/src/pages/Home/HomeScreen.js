@@ -49,7 +49,6 @@ const fv = (fields, key, fallback = '') =>
 const HomeScreen = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [cms, setCms] = useState(null);
-  const [cmsLoading, setCmsLoading] = useState(true);
 
   useEffect(() => {
     const fetchCms = async () => {
@@ -62,8 +61,6 @@ const HomeScreen = () => {
       } catch (err) {
         console.warn('[HomeScreen] CMS fetch failed, using static fallbacks.', err.message);
         setCms(null);
-      } finally {
-        setCmsLoading(false);
       }
     };
     fetchCms();

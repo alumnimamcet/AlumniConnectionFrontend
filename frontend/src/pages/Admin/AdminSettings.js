@@ -3,10 +3,10 @@ import { useAuth } from '../../context/AuthContext';
 import { authService, adminService } from '../../services/api';
 import { ClipLoader } from 'react-spinners';
 import {
-  FiSettings, FiLock, FiUser, FiShield, FiServer,
+  FiLock, FiUser, FiShield, FiServer,
   FiSave, FiEye, FiEyeOff, FiCheck, FiAlertTriangle,
-  FiInfo, FiSearch, FiX, FiChevronLeft, FiChevronRight,
-  FiRefreshCw, FiToggleLeft, FiToggleRight, FiEdit2,
+  FiInfo, FiSearch, FiChevronLeft, FiChevronRight,
+  FiRefreshCw, FiToggleLeft, FiToggleRight,
 } from 'react-icons/fi';
 
 /* ── Toast ─────────────────────────────────────────────────── */

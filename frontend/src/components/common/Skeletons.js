@@ -164,7 +164,7 @@ export const EmptyState = ({
   </div>
 );
 
-export default {
+const Skeletons = {
   ChatListSkeleton,
   MessagesSkeleton,
   TableSkeleton,
@@ -175,3 +175,6 @@ export default {
   PageSpinner,
   EmptyState,
 };
+
+export default Skeletons;
+

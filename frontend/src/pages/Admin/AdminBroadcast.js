@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { adminService } from '../../services/api';
 import { ClipLoader } from 'react-spinners';
 import {
-  FiBell, FiSend, FiUsers, FiUserCheck, FiCheck,
-  FiAlertTriangle, FiInfo, FiRefreshCw, FiClock,
+  FiSend, FiUsers, FiUserCheck, FiCheck,
+  FiAlertTriangle, FiInfo, FiClock,
   FiGlobe, FiChevronsRight,
 } from 'react-icons/fi';
 

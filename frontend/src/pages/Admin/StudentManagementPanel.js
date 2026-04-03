@@ -7,7 +7,7 @@ import {
   FiDownload, FiRefreshCw, FiChevronLeft, FiChevronRight,
   FiChevronUp, FiChevronDown, FiX, FiCheck, FiAlertTriangle,
   FiUserCheck, FiUsers, FiAward, FiFileText, FiInfo, FiZap,
-  FiMail, FiClock, FiCalendar,
+  FiMail, FiCalendar,
 } from 'react-icons/fi';
 
 /* ── Colour coding for avatar initials ─────────────────────── */
@@ -478,8 +478,6 @@ const StudentManagementPanel = () => {
   const [bulkOpen,     setBulkOpen]     = useState(false);
   const [gradOpen,     setGradOpen]     = useState(false);
 
-  /* action loading */
-  const [actionId,    setActionId]    = useState(null);
   const [addSaving,   setAddSaving]   = useState(false);
   const [editSaving,  setEditSaving]  = useState(false);
   const [delSaving,   setDelSaving]   = useState(false);
@@ -803,7 +801,6 @@ const StudentManagementPanel = () => {
 
               <tbody>
                 {rows.map(s => {
-                  const busy     = actionId === s._id;
                   const initials = s.name?.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
                   const bg       = ac(s.name || '');
                   const overdue  = isOverdue(s);
@@ -870,40 +867,35 @@ const StudentManagementPanel = () => {
                       {/* Actions */}
                       <td>
                         <div className="am-actions">
-                          {busy ? <ClipLoader size={16} color="#6366f1" /> : (
-                            <>
-                              {/* Promote — highlighted red if overdue */}
-                              <button
-                                className="am-btn-icon"
-                                title={overdue ? 'Overdue — Promote to Alumni' : 'Promote to Alumni'}
-                                style={{
-                                  background: overdue ? 'rgba(200,64,34,0.12)' : 'rgba(99,102,241,0.1)',
-                                  color: overdue ? '#c84022' : '#6366f1',
-                                }}
-                                onClick={() => setPromoteTarget(s)}
-                              >
-                                <FiAward size={13} />
-                              </button>
+                          <button
+                            className="am-btn-icon"
+                            title={overdue ? 'Overdue — Promote to Alumni' : 'Promote to Alumni'}
+                            style={{
+                              background: overdue ? 'rgba(200,64,34,0.12)' : 'rgba(99,102,241,0.1)',
+                              color: overdue ? '#c84022' : '#6366f1',
+                            }}
+                            onClick={() => setPromoteTarget(s)}
+                          >
+                            <FiAward size={13} />
+                          </button>
 
-                              {/* Edit */}
-                              <button
-                                className="am-btn-icon am-btn-icon-edit"
-                                title="Edit"
-                                onClick={() => setEditTarget(s)}
-                              >
-                                <FiEdit2 size={13} />
-                              </button>
+                          {/* Edit */}
+                          <button
+                            className="am-btn-icon am-btn-icon-edit"
+                            title="Edit"
+                            onClick={() => setEditTarget(s)}
+                          >
+                            <FiEdit2 size={13} />
+                          </button>
 
-                              {/* Delete */}
-                              <button
-                                className="am-btn-icon am-btn-icon-delete"
-                                title="Delete"
-                                onClick={() => setDeleteTarget(s)}
-                              >
-                                <FiTrash2 size={13} />
-                              </button>
-                            </>
-                          )}
+                          {/* Delete */}
+                          <button
+                            className="am-btn-icon am-btn-icon-delete"
+                            title="Delete"
+                            onClick={() => setDeleteTarget(s)}
+                          >
+                            <FiTrash2 size={13} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -962,21 +954,17 @@ const StudentManagementPanel = () => {
                     <div className="ajd-mobile-card-footer">
                       <div style={{ fontSize:11, color:'#bbb' }}>{s.gender || ''}</div>
                       <div className="am-actions">
-                        {actionId === s._id ? <ClipLoader size={16} color="#6366f1" /> : (
-                          <>
-                            <button
-                              className="am-btn-icon"
-                              title={overdue ? 'Overdue — Promote' : 'Promote to Alumni'}
-                              style={{
-                                background: overdue ? 'rgba(200,64,34,0.12)' : 'rgba(99,102,241,0.1)',
-                                color: overdue ? '#c84022' : '#6366f1',
-                              }}
-                              onClick={() => setPromoteTarget(s)}
-                            ><FiAward size={13} /></button>
-                            <button className="am-btn-icon am-btn-icon-edit" onClick={() => setEditTarget(s)}><FiEdit2 size={13} /></button>
-                            <button className="am-btn-icon am-btn-icon-delete" onClick={() => setDeleteTarget(s)}><FiTrash2 size={13} /></button>
-                          </>
-                        )}
+                        <button
+                          className="am-btn-icon"
+                          title={overdue ? 'Overdue — Promote' : 'Promote to Alumni'}
+                          style={{
+                            background: overdue ? 'rgba(200,64,34,0.12)' : 'rgba(99,102,241,0.1)',
+                            color: overdue ? '#c84022' : '#6366f1',
+                          }}
+                          onClick={() => setPromoteTarget(s)}
+                        ><FiAward size={13} /></button>
+                        <button className="am-btn-icon am-btn-icon-edit" onClick={() => setEditTarget(s)}><FiEdit2 size={13} /></button>
+                        <button className="am-btn-icon am-btn-icon-delete" onClick={() => setDeleteTarget(s)}><FiTrash2 size={13} /></button>
                       </div>
                     </div>
                   </div>

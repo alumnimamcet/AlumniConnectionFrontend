@@ -1,10 +1,10 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { studentAdminService } from '../../services/api';
 import { ClipLoader } from 'react-spinners';
 import {
   FiUploadCloud, FiDownload, FiX, FiCheck, FiChevronRight,
-  FiChevronLeft, FiAlertTriangle, FiUsers, FiUserCheck,
+  FiChevronLeft, FiAlertTriangle,
   FiAlertCircle, FiRefreshCw, FiFileText, FiEye,
   FiArrowRight, FiCheckCircle,
 } from 'react-icons/fi';
@@ -96,7 +96,6 @@ const StepBar = ({ steps, current }) => (
    STEP 0 — CONFIGURE (type selector)
 ══════════════════════════════════════════════════════════════ */
 const StepConfigure = ({ type, setType, onNext }) => {
-  const t = theme(type);
   return (
     <div>
       <h3 style={{ fontSize:17, fontWeight:800, color:'#1a1a2e', marginBottom:6 }}>
@@ -506,7 +505,6 @@ const StepResults = ({ type, result, onReset }) => {
   if (!result) return null;
 
   const { created=0, skipped=0, errors=[] } = result.results || {};
-  const total  = created + skipped + errors.length;
   const success = created > 0 && errors.length === 0;
   const partial = created > 0 && errors.length > 0;
 
