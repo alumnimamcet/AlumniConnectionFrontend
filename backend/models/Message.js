@@ -13,7 +13,16 @@ const messageSchema = new mongoose.Schema({
   },
   text: {
     type: String,
-    required: true
+    default: ''
+  },
+  image: {
+    type: String,
+    default: ''     // Cloudinary URL if message contains an image
+  },
+  messageType: {
+    type: String,
+    enum: ['text', 'image', 'mixed'],
+    default: 'text'
   },
   isRead: {
     type: Boolean,
@@ -26,5 +35,8 @@ const messageSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// ── Performance indexes ──────────────────────────────────────
+messageSchema.index({ chatId: 1, createdAt: -1 }); // Fast message retrieval per chat
 
 module.exports = mongoose.model('Message', messageSchema);

@@ -31,7 +31,7 @@ api.interceptors.response.use(
       localStorage.removeItem('alumni_user');
 
       if (role === 'admin') {
-        window.location.href = '/login/admin';
+        window.location.href = '/admin/login';
       } else if (role === 'student') {
         window.location.href = '/login/student';
       } else {
@@ -45,8 +45,8 @@ api.interceptors.response.use(
 
 // ─── Auth Service ─────────────────────────────────────────────
 export const authService = {
-  login: (email, password, role) =>
-    api.post('/auth/login', { email, password, role }),
+  login: (email, password, role, secretKey) =>
+    api.post('/auth/login', { email, password, role, ...(secretKey ? { secretKey } : {}) }),
 
   register: (formData) =>
     api.post('/auth/register', formData),
@@ -97,7 +97,7 @@ export const userService = {
 
 // ─── Post / Feed Service ──────────────────────────────────────
 export const postService = {
-  getFeed:          ()                        => api.get('/posts'),
+  getFeed:          (page, limit)              => api.get('/posts', { params: { page, limit } }),
   getUserPosts:     (userId, limit)           => api.get(`/posts/user/${userId}`, { params: limit ? { limit } : {} }),
   getUserActivity:  (userId, limit)           => api.get(`/posts/activity/${userId}`, { params: limit ? { limit } : {} }),
   createPost:       (formData)                => api.post('/posts', formData),
@@ -240,6 +240,32 @@ export const studentAdminService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   triggerGraduation: () => api.post('/admin/graduation/run'),
+};
+
+// ─── Staff / Coordinator Service ──────────────────────────────
+export const staffService = {
+  getStudents:  (params) => api.get('/staff/students',   { params }),
+  getAnalytics: ()       => api.get('/staff/analytics'),
+  getJobReport: ()       => api.get('/staff/job-report'),
+};
+
+// ─── Mentorship Service ───────────────────────────────────────
+export const mentorshipService = {
+  registerMentor:      (data)    => api.post('/mentorship/register-mentor', data),
+  getMyMentorProfile:  ()        => api.get('/mentorship/me/mentor-profile'),
+  getMentors:          (params)  => api.get('/mentorship/mentors', { params }),
+  sendRequest:         (data)    => api.post('/mentorship/request', data),
+  getMyRequests:       ()        => api.get('/mentorship/my-requests'),
+  getIncomingRequests: ()        => api.get('/mentorship/incoming-requests'),
+  acceptRequest:       (id)      => api.put(`/mentorship/request/${id}/accept`),
+  rejectRequest:       (id)      => api.put(`/mentorship/request/${id}/reject`),
+  getMySessions:       ()        => api.get('/mentorship/my-sessions'),
+  completeSession:     (id, data)=> api.put(`/mentorship/session/${id}/complete`, data),
+  submitFeedback:      (id, data)=> api.put(`/mentorship/session/${id}/feedback`, data),
+  updateNotes:         (id, data)=> api.put(`/mentorship/session/${id}/notes`, data),
+  uploadChatImage:     (chatId, formData) => api.post(`/mentorship/chat/${chatId}/image`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export default api;

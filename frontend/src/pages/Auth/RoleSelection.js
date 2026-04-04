@@ -13,14 +13,14 @@ const RoleSelection = () => {
       <div className="auth-card text-center p-5 shadow-lg">
         <h1 className="h3 fw-bold mb-4">SELECT YOUR ROLE</h1>
         <div className="d-grid gap-3">
-          <Link to="/signup/admin" className="btn btn-role-select">
-            <i className="fas fa-user-shield me-2"></i> ADMIN
-          </Link>
           <Link to="/signup/alumni" className="btn btn-role-select">
             <i className="fas fa-user-graduate me-2"></i> ALUMNI
           </Link>
           <Link to="/signup/student" className="btn btn-role-select">
             <i className="fas fa-users me-2"></i> STUDENT
+          </Link>
+          <Link to="/signup/staff" className="btn btn-role-select">
+            <i className="fas fa-chalkboard-teacher me-2"></i> STAFF (Coordinator)
           </Link>
         </div>
       </div>

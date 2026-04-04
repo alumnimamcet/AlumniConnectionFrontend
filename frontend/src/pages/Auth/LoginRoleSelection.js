@@ -33,9 +33,9 @@ const LoginRoleSelection = () => {
             <i className="fas fa-user-tie fa-lg me-3 text-secondary"></i> 
             <span className="fw-bold">ALUMNI LOGIN</span>
           </Link>
-          <Link to="/login/admin" className="btn btn-role-select d-flex align-items-center">
-            <i className="fas fa-user-shield fa-lg me-3 text-secondary"></i> 
-            <span className="fw-bold">ADMIN LOGIN</span>
+          <Link to="/login/staff" className="btn btn-role-select d-flex align-items-center">
+            <i className="fas fa-chalkboard-teacher fa-lg me-3 text-secondary"></i>
+            <span className="fw-bold">STAFF LOGIN</span>
           </Link>
         </div>
 

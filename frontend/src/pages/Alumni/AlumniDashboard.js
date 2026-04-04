@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useInView } from 'react-intersection-observer';
 import { useAuth } from '../../context/AuthContext';
 import { postService } from '../../services/api';
 import ProfileCard from './components/ProfileCard';
@@ -349,19 +350,55 @@ const CreatePostBox = ({ user, onPostCreated, showToast }) => {
 const AlumniDashboard = () => {
   const { user } = useAuth();
 
-  const [feedData, setFeedData] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [toast,    setToast]    = useState(null);
+  const [feedData,    setFeedData]    = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page,        setPage]        = useState(1);
+  const [hasMore,     setHasMore]     = useState(true);
+  const [toast,       setToast]       = useState(null);
+
+  // IntersectionObserver sentinel — fires when user scrolls near bottom
+  const { ref: sentinelRef, inView } = useInView({ threshold: 0.1 });
 
   const showToast = (message, type = 'info') => setToast({ message, type });
 
-  /* Load feed */
+  /* Load feed — page 1 on mount, with sessionStorage instant-paint cache */
   useEffect(() => {
     const loadFeed = async () => {
+      const cacheKey = `alumni_feed_${user?._id || 'guest'}`;
       try {
+        // ── Try sessionStorage cache first for instant paint ——
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            const { data, pagination } = JSON.parse(cached);
+            setFeedData(data);
+            setHasMore(pagination?.hasMore ?? false);
+            setLoading(false);
+            // Background revalidation: silently refresh without blocking UI
+            const fresh = await postService.getFeed(1, 20);
+            const freshData = fresh.data.data || [];
+            setFeedData(freshData);
+            setHasMore(fresh.data.pagination?.hasMore ?? false);
+            sessionStorage.setItem(cacheKey, JSON.stringify({ data: freshData, pagination: fresh.data.pagination }));
+            return;
+          } catch (_) {
+            // Corrupt cache — fall through to fresh fetch
+            sessionStorage.removeItem(cacheKey);
+          }
+        }
+
+        // ── Cold fetch (no cache yet) ——
         setLoading(true);
-        const res = await postService.getFeed();
-        setFeedData(res.data.data || []);
+        const res = await postService.getFeed(1, 20);
+        const freshData = res.data.data || [];
+        setFeedData(freshData);
+        setHasMore(res.data.pagination?.hasMore ?? false);
+        setPage(1);
+        // Persist first page to session cache
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({ data: freshData, pagination: res.data.pagination }));
+        } catch (_) { /* sessionStorage quota exceeded — no-op */ }
       } catch {
         showToast('Failed to load feed. Please refresh.', 'error');
       } finally {
@@ -369,10 +406,15 @@ const AlumniDashboard = () => {
       }
     };
     loadFeed();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* Callbacks */
-  const handlePostCreated = (newPost) => setFeedData(prev => [newPost, ...prev]);
+  const handlePostCreated = (newPost) => {
+    setFeedData(prev => [newPost, ...prev]);
+    // Bust session cache so next navigation re-fetches fresh data
+    try { sessionStorage.removeItem(`alumni_feed_${user?._id || 'guest'}`); } catch (_) {}
+  };
 
   const handleLike = async (postId) => {
     try {
@@ -394,6 +436,29 @@ const AlumniDashboard = () => {
   };
 
   const handleShare = () => showToast('Post link copied to clipboard!', 'info');
+
+  /* Infinite scroll — auto-fetch next page when sentinel is in view */
+  useEffect(() => {
+    if (inView && hasMore && !loadingMore && !loading) {
+      const loadMore = async () => {
+        const nextPage = page + 1;
+        try {
+          setLoadingMore(true);
+          const res = await postService.getFeed(nextPage, 20);
+          const newPosts = res.data.data || [];
+          setFeedData(prev => [...prev, ...newPosts]);
+          setHasMore(res.data.pagination?.hasMore ?? false);
+          setPage(nextPage);
+        } catch {
+          showToast('Failed to load more posts.', 'error');
+        } finally {
+          setLoadingMore(false);
+        }
+      };
+      loadMore();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inView]);
 
   /* Loading screen */
   if (loading) {
@@ -424,15 +489,34 @@ const AlumniDashboard = () => {
 
             <div className="feed-scroll-area">
               {feedData.length > 0 ? (
-                feedData.map(post => (
-                  <FeedItem
-                    key={post._id || post.id}
-                    post={post}
-                    onLike={handleLike}
-                    onComment={handleComment}
-                    onShare={handleShare}
-                  />
-                ))
+                <>
+                  {feedData.map(post => (
+                    <FeedItem
+                      key={post._id || post.id}
+                      post={post}
+                      onLike={handleLike}
+                      onComment={handleComment}
+                      onShare={handleShare}
+                    />
+                  ))}
+
+                  {/* ── Infinite Scroll Sentinel ── */}
+                  <div ref={sentinelRef} className="text-center py-3" style={{ minHeight: 48 }}>
+                    {loadingMore && (
+                      <div className="d-inline-flex align-items-center gap-2 text-muted" style={{ fontSize: 13 }}>
+                        <ClipLoader size={16} color="#c84022" />
+                        <span>Loading more posts…</span>
+                      </div>
+                    )}
+                    {!hasMore && feedData.length > 0 && (
+                      <div className="d-flex align-items-center justify-content-center gap-2" style={{ color: '#aaa', fontSize: 12 }}>
+                        <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
+                        <span>You're all caught up</span>
+                        <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
+                      </div>
+                    )}
+                  </div>
+                </>
               ) : (
                 <div className="text-center p-5 bg-white rounded-4 shadow-sm border-0">
                   <i className="fas fa-stream fa-2x text-muted mb-3"></i>

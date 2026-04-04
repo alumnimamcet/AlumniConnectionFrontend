@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, trim: true },
   role: {
     type: String,
-    enum: ['admin', 'alumni', 'student'],
+    enum: ['admin', 'alumni', 'student', 'staff'],
     default: 'alumni'
   },
   gender: String,
