@@ -137,6 +137,27 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // ── STAFF: OTP flow, instant activation (like students) ──
+    // Staff are trusted internal faculty — no admin approval step.
+    if (role === 'staff') {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiry = Date.now() + 10 * 60 * 1000;
+      pendingRegistrations.set(email.toLowerCase(), {
+        name, email: email.toLowerCase(), password, phone, gender,
+        role: 'staff',
+        department,
+        designation, // Principal / HOD / Professor
+        otp,
+        otpExpiry: expiry
+      });
+      await sendOTPEmail(email, otp, name);
+      return res.status(200).json({
+        success: true,
+        otpSent: true,
+        message: `OTP sent to ${email}. Please verify to complete staff registration.`
+      });
+    }
+
     // ── ADMIN: Validate secret key before OTP ──
     if (role === 'admin') {
       const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || 'MAMCET_ADMIN_2026';

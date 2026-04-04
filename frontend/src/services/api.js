@@ -242,4 +242,11 @@ export const studentAdminService = {
   triggerGraduation: () => api.post('/admin/graduation/run'),
 };
 
+// ─── Staff / Coordinator Service ──────────────────────────────
+export const staffService = {
+  getStudents:  (params) => api.get('/staff/students',   { params }),
+  getAnalytics: ()       => api.get('/staff/analytics'),
+  getJobReport: ()       => api.get('/staff/job-report'),
+};
+
 export default api;

@@ -22,6 +22,9 @@ const RoleSelection = () => {
           <Link to="/signup/student" className="btn btn-role-select">
             <i className="fas fa-users me-2"></i> STUDENT
           </Link>
+          <Link to="/signup/staff" className="btn btn-role-select">
+            <i className="fas fa-chalkboard-teacher me-2"></i> STAFF (Coordinator)
+          </Link>
         </div>
       </div>
     </div>

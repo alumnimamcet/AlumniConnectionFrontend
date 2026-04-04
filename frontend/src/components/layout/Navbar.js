@@ -74,9 +74,12 @@ const Navbar = () => {
     navigate('/');
   };
 
-  const brandColor     = roleKey === 'admin' ? '#b22222' : '#c84022';
-  const brandLabel     = roleKey === 'admin' ? 'ADMIN PANEL' : 'ALUMNI CONNECT';
-  const dashboardHome  = roleKey === 'admin' ? `/admin/home/${user?._id || user?.id}` : roleKey === 'student' ? `/student/home/${user?._id || user?.id}` : `/alumni/home/${user?._id || user?.id}`;
+  const brandColor     = roleKey === 'admin' ? '#b22222' : roleKey === 'staff' ? '#1a6b4a' : '#c84022';
+  const brandLabel     = roleKey === 'admin' ? 'ADMIN PANEL' : roleKey === 'staff' ? 'STAFF PANEL' : 'ALUMNI CONNECT';
+  const dashboardHome  = roleKey === 'admin'   ? `/admin/home/${user?._id || user?.id}`
+                       : roleKey === 'student' ? `/student/home/${user?._id || user?.id}`
+                       : roleKey === 'staff'   ? '/staff/dashboard'
+                       : `/alumni/home/${user?._id || user?.id}`;
   const dashboardItems = navigationConfig[userRole] || [];
 
   /* ─────────────────────────────────────────────────────────── *

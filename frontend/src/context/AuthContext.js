@@ -57,6 +57,7 @@ export const AuthProvider = ({ children }) => {
     const rawRole = (user.role || '').toLowerCase();
     if (rawRole === 'admin' || rawRole === 'administrator') return 'admin';
     if (rawRole === 'student') return 'student';
+    if (rawRole === 'staff')   return 'staff';
     return 'alumni';
   }, [user]);
 

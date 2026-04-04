@@ -19,6 +19,14 @@ export const navigationConfig = {
         { path: '/messages',       icon: FaCommentDots,  label: 'Messages',      noUserId: true, isMessaging: true },
         { path: '/notifications',  icon: FaBell,         label: 'Notifications', noUserId: true, isNotification: true },
     ],
+    staff: [
+        { path: '/staff/dashboard', icon: FaChartLine,   label: 'Dashboard',     noUserId: true },
+        { path: '/alumni/home',     icon: FaHome,         label: 'Home'          },
+        { path: '/network',         icon: FaUserFriends,  label: 'Network',       noUserId: true },
+        { path: '/opportunities',   icon: FaLayerGroup,   label: 'Opportunities', noUserId: true },
+        { path: '/messages',        icon: FaCommentDots,  label: 'Messages',      noUserId: true, isMessaging: true },
+        { path: '/notifications',   icon: FaBell,         label: 'Notifications', noUserId: true, isNotification: true },
+    ],
     admin: [
         { path: '/admin/home',       icon: FaHome,           label: 'Home'      },
         { path: '/admin/approvals',  icon: FaClipboardCheck, label: 'Approvals' },
@@ -44,5 +52,6 @@ export const getUserRoleKey = (user) => {
     const rawRole = (user.role || '').toLowerCase();
     if (rawRole === 'admin' || rawRole === 'administrator') return 'admin';
     if (rawRole === 'student') return 'student';
+    if (rawRole === 'staff')   return 'staff';
     return 'alumni'; // default logged-in role
 };

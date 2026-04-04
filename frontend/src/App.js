@@ -22,6 +22,8 @@ import LoginRoleSelection from './pages/Auth/LoginRoleSelection';
 import StudentLogin from './pages/Auth/StudentLogin';
 import AlumniLogin from './pages/Auth/AlumniLogin';
 import AdminLogin from './pages/Auth/AdminLogin';
+import StaffSignUp from './pages/Auth/StaffSignUp';
+import StaffLogin from './pages/Auth/StaffLogin';
 
 // Unified Profile (own-edit + public-view merged)
 import Profile from './pages/Profile/Profile';
@@ -32,6 +34,7 @@ import ProfileActivity from './pages/Profile/ProfileActivity';
 import AlumniDashboard from './pages/Alumni/AlumniDashboard';
 import StudentDashboard from './pages/Student/StudentDashboard';
 import AdminHome from './pages/Admin/AdminHome';
+import StaffDashboard from './pages/Staff/StaffDashboard';
 
 // Shared Protected Pages
 import JobPostings from './pages/Home/JobPostings';
@@ -160,10 +163,12 @@ function App() {
                       <Route path="/signup/student" element={<StudentSignUp />} />
                       <Route path="/signup/alumni" element={<AlumniSignUp />} />
                       <Route path="/signup/admin" element={<AdminSignUp />} />
+                      <Route path="/signup/staff" element={<StaffSignUp />} />
                       <Route path="/login" element={<LoginRoleSelection />} />
                       <Route path="/login/student" element={<StudentLogin />} />
                       <Route path="/login/alumni" element={<AlumniLogin />} />
                       <Route path="/login/admin" element={<AdminLogin />} />
+                      <Route path="/login/staff" element={<StaffLogin />} />
 
                       {/* ── Protected: Any Authenticated User ─── */}
                       <Route element={<ProtectedRoute />}>
@@ -175,6 +180,11 @@ function App() {
                         <Route path="/student/StudentEvents/:userId" element={<StudentEvents />} />
                         <Route path="/events/:userId" element={<Events />} />
                         <Route path="/notifications/:userId" element={<Notification />} />
+                      </Route>
+
+                      {/* ── Protected: Staff & Admin ────────────── */}
+                      <Route element={<ProtectedRoute allowedRoles={['staff', 'admin']} />}>
+                        <Route path="/staff/dashboard" element={<StaffDashboard />} />
                       </Route>
 
                       {/* ── Protected: Admin Only (legacy /:userId routes) ── */}
