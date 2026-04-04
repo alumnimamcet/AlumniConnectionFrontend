@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useInView } from 'react-intersection-observer';
 import { useAuth } from '../../context/AuthContext';
 import { postService } from '../../services/api';
 import ProfileCard from './components/ProfileCard';
@@ -356,6 +357,9 @@ const AlumniDashboard = () => {
   const [hasMore,     setHasMore]     = useState(true);
   const [toast,       setToast]       = useState(null);
 
+  // IntersectionObserver sentinel — fires when user scrolls near bottom
+  const { ref: sentinelRef, inView } = useInView({ threshold: 0.1 });
+
   const showToast = (message, type = 'info') => setToast({ message, type });
 
   /* Load feed — page 1 on mount */
@@ -400,22 +404,28 @@ const AlumniDashboard = () => {
 
   const handleShare = () => showToast('Post link copied to clipboard!', 'info');
 
-  /* Load More — append next page */
-  const handleLoadMore = async () => {
-    const nextPage = page + 1;
-    try {
-      setLoadingMore(true);
-      const res = await postService.getFeed(nextPage, 20);
-      const newPosts = res.data.data || [];
-      setFeedData(prev => [...prev, ...newPosts]);
-      setHasMore(res.data.pagination?.hasMore ?? false);
-      setPage(nextPage);
-    } catch {
-      showToast('Failed to load more posts.', 'error');
-    } finally {
-      setLoadingMore(false);
+  /* Infinite scroll — auto-fetch next page when sentinel is in view */
+  useEffect(() => {
+    if (inView && hasMore && !loadingMore && !loading) {
+      const loadMore = async () => {
+        const nextPage = page + 1;
+        try {
+          setLoadingMore(true);
+          const res = await postService.getFeed(nextPage, 20);
+          const newPosts = res.data.data || [];
+          setFeedData(prev => [...prev, ...newPosts]);
+          setHasMore(res.data.pagination?.hasMore ?? false);
+          setPage(nextPage);
+        } catch {
+          showToast('Failed to load more posts.', 'error');
+        } finally {
+          setLoadingMore(false);
+        }
+      };
+      loadMore();
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inView]);
 
   /* Loading screen */
   if (loading) {
@@ -457,22 +467,22 @@ const AlumniDashboard = () => {
                     />
                   ))}
 
-                  {hasMore && (
-                    <div className="text-center my-3">
-                      <button
-                        className="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold d-inline-flex align-items-center gap-2"
-                        onClick={handleLoadMore}
-                        disabled={loadingMore}
-                        style={{ fontSize: 14 }}
-                      >
-                        {loadingMore ? (
-                          <><ClipLoader size={14} color="#666" /> Loading…</>
-                        ) : (
-                          <><i className="fas fa-arrow-down"></i> Load More Posts</>
-                        )}
-                      </button>
-                    </div>
-                  )}
+                  {/* ── Infinite Scroll Sentinel ── */}
+                  <div ref={sentinelRef} className="text-center py-3" style={{ minHeight: 48 }}>
+                    {loadingMore && (
+                      <div className="d-inline-flex align-items-center gap-2 text-muted" style={{ fontSize: 13 }}>
+                        <ClipLoader size={16} color="#c84022" />
+                        <span>Loading more posts…</span>
+                      </div>
+                    )}
+                    {!hasMore && feedData.length > 0 && (
+                      <div className="d-flex align-items-center justify-content-center gap-2" style={{ color: '#aaa', fontSize: 12 }}>
+                        <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
+                        <span>You're all caught up</span>
+                        <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className="text-center p-5 bg-white rounded-4 shadow-sm border-0">

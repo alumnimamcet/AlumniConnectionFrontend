@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useInView } from 'react-intersection-observer';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { postService } from '../../services/api';
@@ -246,17 +247,26 @@ const OpportunitiesSidebar = () => (
 // ──────────────────────────────────────────────────────────────
 const StudentDashboard = () => {
     const { user } = useAuth();
-    const [feedData, setFeedData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [toast, setToast] = useState(null);
+    const [feedData,    setFeedData]    = useState([]);
+    const [loading,     setLoading]     = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page,        setPage]        = useState(1);
+    const [hasMore,     setHasMore]     = useState(true);
+    const [toast,       setToast]       = useState(null);
     const showToast = (message, type = 'info') => setToast({ message, type });
 
+    // IntersectionObserver sentinel — fires when user scrolls to bottom
+    const { ref: sentinelRef, inView } = useInView({ threshold: 0.1 });
+
+    /* Initial load — page 1 */
     useEffect(() => {
         const loadFeed = async () => {
             try {
                 setLoading(true);
-                const res = await postService.getFeed();
+                const res = await postService.getFeed(1, 10);
                 setFeedData(res.data.data || []);
+                setHasMore(res.data.pagination?.hasMore ?? false);
+                setPage(1);
             } catch {
                 showToast('Failed to load feed.', 'error');
             } finally {
@@ -265,6 +275,29 @@ const StudentDashboard = () => {
         };
         loadFeed();
     }, []);
+
+    /* Infinite scroll — auto-fetch next page when sentinel is in view */
+    useEffect(() => {
+        if (inView && hasMore && !loadingMore && !loading) {
+            const loadMore = async () => {
+                const nextPage = page + 1;
+                try {
+                    setLoadingMore(true);
+                    const res = await postService.getFeed(nextPage, 10);
+                    const newPosts = res.data.data || [];
+                    setFeedData(prev => [...prev, ...newPosts]);
+                    setHasMore(res.data.pagination?.hasMore ?? false);
+                    setPage(nextPage);
+                } catch {
+                    showToast('Failed to load more posts.', 'error');
+                } finally {
+                    setLoadingMore(false);
+                }
+            };
+            loadMore();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [inView]);
 
     const handlePostCreated = useCallback((newPost) => setFeedData(prev => [newPost, ...prev]), []);
 
@@ -319,15 +352,34 @@ const StudentDashboard = () => {
                         <StudentCreatePost user={user} onPostCreated={handlePostCreated} showToast={showToast} />
                         <div className="feed-scroll-area">
                             {feedData.length > 0 ? (
-                                feedData.map(post => (
-                                    <FeedItem
-                                        key={post._id || post.id}
-                                        post={post}
-                                        onLike={handleLike}
-                                        onComment={handleComment}
-                                        onShare={() => showToast('Post link copied!', 'info')}
-                                    />
-                                ))
+                                <>
+                                    {feedData.map(post => (
+                                        <FeedItem
+                                            key={post._id || post.id}
+                                            post={post}
+                                            onLike={handleLike}
+                                            onComment={handleComment}
+                                            onShare={() => showToast('Post link copied!', 'info')}
+                                        />
+                                    ))}
+
+                                    {/* ── Infinite Scroll Sentinel ── */}
+                                    <div ref={sentinelRef} className="text-center py-3" style={{ minHeight: 48 }}>
+                                        {loadingMore && (
+                                            <div className="d-inline-flex align-items-center gap-2 text-muted" style={{ fontSize: 13 }}>
+                                                <ClipLoader size={16} color="#c84022" />
+                                                <span>Loading more posts…</span>
+                                            </div>
+                                        )}
+                                        {!hasMore && feedData.length > 0 && (
+                                            <div className="d-flex align-items-center justify-content-center gap-2" style={{ color: '#aaa', fontSize: 12 }}>
+                                                <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
+                                                <span>You're all caught up</span>
+                                                <div style={{ flex: 1, height: 1, background: '#e8e8e8' }} />
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
                             ) : (
                                 <div className="text-center p-5 bg-white rounded-4 shadow-sm border-0">
                                     <FaUserFriends size={36} className="text-muted mb-3 opacity-50" />
