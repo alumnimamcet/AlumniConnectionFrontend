@@ -4,21 +4,36 @@ const nodemailer = require('nodemailer');
 const isSmtpConfigured = process.env.SMTP_USER && process.env.SMTP_PASS;
 
 let transporter;
+
 if (isSmtpConfigured) {
   transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
     port: 587,
-    secure: false,
+    secure: false, // Port 587-ku ithu false-ah irukanum (TLS use pannum)
+    pool: true,    // Connections-ah open-ah vechu reuse pannum, timeout-ah thadukkum
     auth: {
       user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS  // Use Gmail App Password, not your regular password
+      pass: process.env.SMTP_PASS, // Kandippa 16-digit Google App Password irukanum
+    },
+    tls: {
+      // Render network-la handshake errors varaama irukka intha settings mukkiyam
+      rejectUnauthorized: false,
+      minVersion: 'TLSv1.2'
+    }
+  });
+
+  // Connection-ah verify panna oru chinna check (Optional but good for debugging)
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error("❌ SMTP Connection Error:", error.message);
+    } else {
+      console.log("🚀 SMTP Server is ready to send emails");
     }
   });
 }
 
 /**
  * Send a 6-digit OTP to the given email address.
- * Falls back to console.log if SMTP is not configured (development mode).
  */
 const sendOTPEmail = async (email, otp, name = '') => {
   if (!isSmtpConfigured) {
@@ -26,26 +41,32 @@ const sendOTPEmail = async (email, otp, name = '') => {
     return;
   }
 
-  await transporter.sendMail({
-    from: `"MAMCET Alumni Connect" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: 'Your OTP for MAMCET Alumni Connect Registration',
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;border:1px solid #ddd;border-radius:8px;overflow:hidden">
-        <div style="background:#c84022;padding:24px;text-align:center">
-          <h2 style="color:white;margin:0">MAMCET Alumni Connect</h2>
-        </div>
-        <div style="padding:32px">
-          <h3>Hello ${name || 'there'}!</h3>
-          <p>Use the OTP below to complete your registration. It expires in <strong>10 minutes</strong>.</p>
-          <div style="font-size:36px;font-weight:bold;letter-spacing:12px;color:#c84022;text-align:center;padding:24px;background:#fff5f5;border-radius:8px;margin:20px 0">
-            ${otp}
+  try {
+    await transporter.sendMail({
+      from: `"MAMCET Alumni Connect" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: 'Your OTP for MAMCET Alumni Connect Registration',
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;border:1px solid #ddd;border-radius:8px;overflow:hidden">
+          <div style="background:#c84022;padding:24px;text-align:center">
+            <h2 style="color:white;margin:0">MAMCET Alumni Connect</h2>
           </div>
-          <p style="color:#666;font-size:13px">If you didn't request this, you can safely ignore this email.</p>
+          <div style="padding:32px">
+            <h3>Hello ${name || 'there'}!</h3>
+            <p>Use the OTP below to complete your registration. It expires in <strong>10 minutes</strong>.</p>
+            <div style="font-size:36px;font-weight:bold;letter-spacing:12px;color:#c84022;text-align:center;padding:24px;background:#fff5f5;border-radius:8px;margin:20px 0">
+              ${otp}
+            </div>
+            <p style="color:#666;font-size:13px">If you didn't request this, you can safely ignore this email.</p>
+          </div>
         </div>
-      </div>
-    `
-  });
+      `
+    });
+    console.log(`📧 OTP sent successfully to ${email}`);
+  } catch (err) {
+    console.error(`❌ Failed to send OTP to ${email}:`, err.message);
+    throw err; // Controller-la error handle panna ithe throw pandrom
+  }
 };
 
 /**
@@ -57,34 +78,34 @@ const sendApprovalEmail = async (email, name) => {
     return;
   }
 
-  await transporter.sendMail({
-    from: `"MAMCET Alumni Connect" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: 'Your MAMCET Alumni Connect Account Has Been Approved!',
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;border:1px solid #ddd;border-radius:8px;overflow:hidden">
-        <div style="background:#c84022;padding:24px;text-align:center">
-          <h2 style="color:white;margin:0">Welcome, ${name}! 🎉</h2>
+  try {
+    await transporter.sendMail({
+      from: `"MAMCET Alumni Connect" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: 'Your MAMCET Alumni Connect Account Has Been Approved!',
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;border:1px solid #ddd;border-radius:8px;overflow:hidden">
+          <div style="background:#c84022;padding:24px;text-align:center">
+            <h2 style="color:white;margin:0">Welcome, ${name}! 🎉</h2>
+          </div>
+          <div style="padding:32px">
+            <p>Your alumni account has been <strong>approved</strong> by the MAMCET admin team.</p>
+            <p>You can now log in and connect with your fellow alumni, students, and explore job opportunities.</p>
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login/alumni"
+               style="display:inline-block;background:#c84022;color:white;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:16px">
+              Log In Now
+            </a>
+          </div>
         </div>
-        <div style="padding:32px">
-          <p>Your alumni account has been <strong>approved</strong> by the MAMCET admin team.</p>
-          <p>You can now log in and connect with your fellow alumni, students, and explore job opportunities.</p>
-          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login/alumni"
-             style="display:inline-block;background:#c84022;color:white;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:16px">
-            Log In Now
-          </a>
-        </div>
-      </div>
-    `
-  });
+      `
+    });
+  } catch (err) {
+    console.error(`❌ Failed to send Approval email to ${email}:`, err.message);
+  }
 };
 
 /**
  * Send a broadcast/announcement email from admin to a list of users.
- * @param {Array<{email:string, name:string}>} recipients
- * @param {string} subject
- * @param {string} title
- * @param {string} message
  */
 const sendBroadcastEmail = async (recipients, subject, title, message) => {
   if (!isSmtpConfigured) {
