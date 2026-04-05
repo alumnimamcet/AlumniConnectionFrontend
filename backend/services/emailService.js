@@ -8,7 +8,7 @@ let transporter;
 if (isSmtpConfigured) {
   transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
+    port: 2525,
     secure: false, // Port 587-ku ithu false-ah irukanum (TLS use pannum)
     pool: true,    // Connections-ah open-ah vechu reuse pannum, timeout-ah thadukkum
     auth: {
