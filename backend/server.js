@@ -105,6 +105,10 @@ io.on('connection', (socket) => {
 
     // Register presence
     onlineUsers.set(socket.id, uid.toString());
+
+    // ── Instant zero-latency notification to all connected clients ──
+    io.emit('user_joined', uid.toString());
+    // Batch broadcast for full list sync
     broadcastOnlineUsers();
   });
 
@@ -173,9 +177,13 @@ io.on('connection', (socket) => {
     const userId = onlineUsers.get(socket.id);
     if (userId) {
       onlineUsers.delete(socket.id);
-      // If user has no more sockets, clear their active chats
+      // If user has no more active sockets, they are truly offline
       const stillOnline = [...onlineUsers.values()].includes(userId);
-      if (!stillOnline) activeChats.delete(userId);
+      if (!stillOnline) {
+        activeChats.delete(userId);
+        // ── Instant zero-latency notification ──
+        io.emit('user_left', userId);
+      }
     }
     broadcastOnlineUsers();
   });
@@ -185,9 +193,10 @@ io.on('connection', (socket) => {
 // ─── Routes (must come AFTER io is attached to app) ──────────
 app.use('/api/auth',         authLimiter, require('./routes/auth'));
 app.use('/api/users',        apiLimiter,  require('./routes/users'));
-// Part 3: 2-minute in-memory cache on GET /api/posts (read-heavy feed)
-// Only GET requests are cached; POST/PUT/DELETE bypass apicache automatically.
-app.use('/api/posts',        apiLimiter,  cache('2 minutes'), require('./routes/posts'));
+// Posts feed — no server-side cache; frontend sessionStorage handles instant paint.
+// A 2-min server cache caused stale feed data after create/like/comment mutations.
+app.use('/api/posts',        apiLimiter,  require('./routes/posts'));
+
 app.use('/api/jobs',         apiLimiter,  require('./routes/jobs'));
 app.use('/api/events',       apiLimiter,  require('./routes/events'));
 app.use('/api/notifications',apiLimiter,  require('./routes/notifications'));

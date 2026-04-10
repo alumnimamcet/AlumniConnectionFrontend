@@ -81,7 +81,7 @@ router.get('/', protect, asyncHandler(async (req, res, next) => {
   const myId = req.user._id;
 
   // Get 1:1 Chats where user is in participants
-  const directChats = await Chat.find({
+  const rawDirectChats = await Chat.find({
     isGroupChat: false,
     participants: {
       $in: [myId]
@@ -89,6 +89,20 @@ router.get('/', protect, asyncHandler(async (req, res, next) => {
   }).populate('participants', 'name role profilePic department').sort({
     updatedAt: -1
   });
+
+  // Deduplicate direct chats by the "other" participant (keep most recent)
+  const directChats = [];
+  const seenParticipants = new Set();
+  
+  for (const chat of rawDirectChats) {
+    const otherParticipant = chat.participants.find(p => p._id.toString() !== myId.toString());
+    const otherId = otherParticipant ? otherParticipant._id.toString() : 'unknown';
+    
+    if (!seenParticipants.has(otherId)) {
+      seenParticipants.add(otherId);
+      directChats.push(chat);
+    }
+  }
 
   // Get Group Chats based on user's GroupMemberships
   const myGroups = await GroupMember.find({
@@ -178,6 +192,22 @@ router.post('/', protect, requireFields('userId'), asyncHandler(async (req, res,
       message: 'Error creating chat'
     });
   }
+}));
+
+// ─── GET /api/chat/unread-count ─ Returns per-chat unread counts (MUST be before /:chatId)
+router.get('/unread-count', protect, asyncHandler(async (req, res, next) => {
+  const myId = req.user._id;
+  const counts = await Message.aggregate([{
+    $match: {
+      readBy: { $nin: [myId] },
+      senderId: { $ne: myId }
+    }
+  }, {
+    $group: { _id: '$chatId', count: { $sum: 1 } }
+  }]);
+  const map = {};
+  counts.forEach(c => { map[c._id.toString()] = c.count; });
+  res.json({ success: true, data: map });
 }));
 
 // ─── GET /api/chat/:chatId/messages — Get paginated messages
@@ -350,58 +380,43 @@ router.post('/:chatId/messages', protect, validateObjectId('chatId'), asyncHandl
   }
 }));
 
-// ─── GET /api/chat/unread-count ─ Returns per-chat unread counts for the current user
-router.get('/unread-count', protect, asyncHandler(async (req, res, next) => {
-  const myId = req.user._id;
-  const counts = await Message.aggregate([{
-    $match: {
-      readBy: {
-        $nin: [myId]
-      },
-      senderId: {
-        $ne: myId
-      }
-    }
-  }, {
-    $group: {
-      _id: '$chatId',
-      count: {
-        $sum: 1
-      }
-    }
-  }]);
-  // Shape: { [chatId]: count }
-  const map = {};
-  counts.forEach(c => {
-    map[c._id.toString()] = c.count;
-  });
-  res.json({
-    success: true,
-    data: map
-  });
-}));
+
 
 // ─── PUT /api/chat/:chatId/read ─ Mark all messages in a chat as read for current user
 router.put('/:chatId/read', protect, asyncHandler(async (req, res, next) => {
-  const {
-    chatId
-  } = req.params;
+  const { chatId } = req.params;
   const myId = req.user._id;
+
+  // Find the senders of unread messages so we can notify them
+  const unreadMessages = await Message.find({
+    chatId,
+    readBy: { $nin: [myId] },
+    senderId: { $ne: myId }
+  }).select('senderId');
+
   await Message.updateMany({
     chatId,
-    readBy: {
-      $nin: [myId]
-    },
-    senderId: {
-      $ne: myId
-    }
+    readBy: { $nin: [myId] },
+    senderId: { $ne: myId }
   }, {
-    $addToSet: {
-      readBy: myId
-    }
+    $addToSet: { readBy: myId }
   });
-  res.json({
-    success: true
-  });
+
+  // ── Notify senders their messages were read (WhatsApp-style blue ticks) ──
+  const io = req.app.get('io');
+  if (io) {
+    const senderIds = [...new Set(unreadMessages.map(m => m.senderId.toString()))];
+    senderIds.forEach(senderId => {
+      io.to(senderId).emit('messages_read', {
+        chatId,
+        readBy: myId.toString(),
+        readAt: new Date().toISOString()
+      });
+    });
+  }
+
+  res.json({ success: true });
 }));
+
+// ─── (Moved up) GET /api/chat/unread-count is defined BEFORE /:chatId routes above
 module.exports = router;

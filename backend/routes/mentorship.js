@@ -283,9 +283,9 @@ router.put('/request/:id/accept', asyncHandler(async (req, res, next) => {
   request.status = 'accepted';
   await request.save();
 
-  // Reuse existing mentorship chat between this pair, or create a new one
+  // Reuse ANY existing chat between this pair, or create a new one
   let chat = await Chat.findOne({
-    isMentorshipChat: true,
+    isGroupChat: false,
     participants: {
       $all: [request.mentorId, request.menteeId],
       $size: 2
@@ -558,7 +558,8 @@ router.post('/chat/:chatId/image', postUpload.single('image'), asyncHandler(asyn
     updatedAt: new Date()
   });
   const io = req.app.get('io');
-  if (io) io.to(chatId).emit('message received', message);
+  if (io) io.to(chatId).emit('message_received', message);
+
   res.json({
     success: true,
     data: message
