@@ -6,7 +6,8 @@ const Notification = require('../models/Notification');
 const Connection = require('../models/Connection');
 const {
   sendOTPEmail,
-  sendApprovalEmail
+  sendApprovalEmail,
+  sendActivationSuccessEmail
 } = require('../services/emailService');
 const {
   protect
@@ -154,8 +155,6 @@ router.post('/register', asyncHandler(async (req, res, next) => {
   }
 
   // ── ALUMNI: OTP flow → Pending approval (admin must activate) ──
-  // Same pattern as Staff: collect data, generate OTP, put in pendingRegistrations map.
-  // Account is NOT created until OTP is verified.
   if (role === 'alumni') {
     const otp    = Math.floor(100000 + Math.random() * 900000).toString();
     const expiry = Date.now() + 10 * 60 * 1000;
@@ -190,7 +189,7 @@ router.post('/register', asyncHandler(async (req, res, next) => {
       role: 'staff',
       department,
       designation,
-      staffRole: staffRole || designation, // Principal / HOD / Professor
+      staffRole: staffRole || designation,
       otp,
       otpExpiry: expiry
     });
@@ -204,7 +203,11 @@ router.post('/register', asyncHandler(async (req, res, next) => {
 
   // ── ADMIN: Validate secret key before OTP ──
   if (role === 'admin') {
-    const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || 'MAMCET_ADMIN_2026';
+    const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY;
+    if (!ADMIN_SECRET) {
+      console.error('[Auth] ADMIN_SECRET_KEY is not set in environment variables.');
+      return res.status(500).json({ message: 'Server misconfiguration. Contact support.' });
+    }
     if (secretKey !== ADMIN_SECRET) {
       return res.status(403).json({
         message: 'Invalid admin secret key.'
@@ -366,7 +369,11 @@ router.post('/login', asyncHandler(async (req, res, next) => {
   // ── Admin secret key enforcement ──────────────────────────
   // If the account is admin, the secret key MUST match.
   if (user.role === 'admin') {
-    const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || 'MAMCET_ADMIN_2026';
+    const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY;
+    if (!ADMIN_SECRET) {
+      console.error('[Auth/Login] ADMIN_SECRET_KEY is not set in environment variables.');
+      return res.status(500).json({ message: 'Server misconfiguration. Contact support.' });
+    }
     if (!secretKey || secretKey !== ADMIN_SECRET) {
       return res.status(403).json({
         message: 'Invalid admin secret key. Access denied.'
@@ -374,35 +381,38 @@ router.post('/login', asyncHandler(async (req, res, next) => {
     }
   }
 
-  // Block Pending users from logging in EXCEPT if it is their first login (bulk-import)
+  // ── Pending + temp password check: bulk-imported user first login ──────────
   if (user.status === 'Pending') {
-    // If they have a temporary password and it exactly matches, allow them to proceed
     if (user.tempPassword && password === user.tempPassword) {
-      // Allow them into the activation flow
+      // Temp password matches — allow into activation flow
+      console.log(`[Login] Bulk-import user ${user.email} logged in with temp password. Redirecting to activation.`);
+      const token = signToken(user._id);
+      User.findByIdAndUpdate(user._id, { lastLogin: new Date() }).catch(() => {});
+      // Auto-connect to admin
+      ensureAdminConnection(user._id);
+      return sendAuthResponse(res, 200, user, token);
     } else {
-      // Either self-registered, or they put the wrong temporary password
+      // Self-registered pending OR wrong temp password
       return res.status(403).json({
-        message: 'Your account is pending admin approval. You will receive an email once activated.',
+        message: user.tempPassword
+          ? 'Incorrect temporary password. Please check your credentials email.'
+          : 'Your account is pending admin approval. You will receive an email once activated.',
         pendingApproval: true
       });
     }
   }
 
-  // Validate password against hashed password for all active users
-  if (user.status !== 'Pending') {
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({
-        message: 'Incorrect password.'
-      });
-    }
+  // ── Normal password validation for Active users ────────────────────────────
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) {
+    return res.status(401).json({
+      message: 'Incorrect password.'
+    });
   }
+
   const token = signToken(user._id);
   // Record last-login timestamp for analytics (fire-and-forget)
-  User.findByIdAndUpdate(user._id, {
-    lastLogin: new Date()
-  }).catch(() => {});
-
+  User.findByIdAndUpdate(user._id, { lastLogin: new Date() }).catch(() => {});
   // Auto-connect to admin just in case it's a legacy user or missed
   ensureAdminConnection(user._id);
   sendAuthResponse(res, 200, user, token);
@@ -431,6 +441,15 @@ router.post('/activate', protect, asyncHandler(async (req, res, next) => {
   user.status              = 'Active';
 
   await user.save();
+
+  // ── Send activation success email — Part 6 (fire-and-forget) ───────────────
+  sendActivationSuccessEmail(user.email, user.name, user.role).catch(err => {
+    console.error(`[Activate] Success email failed for ${user.email}:`, err.message);
+  });
+  console.log(`[Activate] User ${user.email} (${user.role}) activated successfully. Status → Active.`);
+
+  // Auto-connect to admin
+  ensureAdminConnection(user._id);
 
   // Send fresh auth response
   const token = signToken(user._id);
