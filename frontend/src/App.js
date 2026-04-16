@@ -38,6 +38,7 @@ import ProfilePosts from './pages/Profile/ProfilePosts';
 import ProfileActivity from './pages/Profile/ProfileActivity';
 import ChangePasswordPage from './pages/Profile/ChangePasswordPage';
 import AccountPage from './pages/Profile/AccountPage';
+import PostDetail from './pages/Home/PostDetail';
 
 // Role-Specific Dashboards
 import AlumniDashboard from './pages/Alumni/AlumniDashboard';
@@ -191,6 +192,7 @@ function App() {
                             <Route path="/profile/:id" element={<Profile />} />
                             <Route path="/profile/:id/posts" element={<ProfilePosts />} />
                             <Route path="/profile/:id/activity" element={<ProfileActivity />} />
+                            <Route path="/post/:id" element={<PostDetail />} />
                             <Route path="/privacy-policy" element={<LegalPage type="privacy" />} />
                             <Route path="/terms-conditions" element={<LegalPage type="terms" />} />
                             <Route path="/security" element={<LegalPage type="security" />} />
