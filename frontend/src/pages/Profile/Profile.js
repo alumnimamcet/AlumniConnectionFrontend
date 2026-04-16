@@ -1004,6 +1004,7 @@ const Profile = () => {
                           </div>
                           <FeedItem
                             post={post}
+                            onEdit={(p) => { setEditingPost(p); setEditPostContent(p.content || ''); }}
                             onDelete={async (postId) => {
                               try {
                                 await postService.deletePost(postId);
@@ -1060,6 +1061,7 @@ const Profile = () => {
                           <div key={post._id || post.id}>
                             <FeedItem
                               post={post}
+                              onEdit={(p) => { setEditingPost(p); setEditPostContent(p.content || ''); }}
                               onDelete={async (postId) => {
                                 try {
                                   await postService.deletePost(postId);
@@ -1471,9 +1473,13 @@ const Profile = () => {
               try {
                 const res = await postService.editPost(editingPost._id || editingPost.id, editPostContent);
                 const updated = res.data.data;
-                setUserPosts(prev => prev.map(p =>
+                const patchFn = prev => prev.map(p =>
                   (p._id === editingPost._id || p.id === editingPost.id) ? { ...p, ...updated } : p
-                ));
+                );
+                // Update all three lists if the post appears there
+                setUserPosts(patchFn);
+                setLikedPosts(patchFn);
+                setCommentedPosts(patchFn);
                 setEditingPost(null);
                 setEditPostContent('');
                 showToast('Post updated! ✓', 'success');
