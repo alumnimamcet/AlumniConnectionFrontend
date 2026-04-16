@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { chatService, connectionService, mentorshipService } from '../../services/api';
+import { chatService, connectionService, mentorshipService, userService } from '../../services/api';
 import { useSocket } from '../../context/SocketContext';
 import { useAuth } from '../../context/AuthContext';
 import { useMessage } from '../../context/MessageContext';
@@ -31,7 +31,6 @@ const Messaging = () => {
   const [loading,           setLoading]            = useState(true);
   const [msgInput,          setMsgInput]           = useState('');
   const [search,            setSearch]             = useState('');
-  const [callingChat,       setCallingChat]        = useState(null);
   const [mobileView,        setMobileView]         = useState('list'); // 'list' | 'chat'
   const [isComposing,       setIsComposing]        = useState(false);
   const [searchResults,     setSearchResults]      = useState([]);
@@ -401,6 +400,46 @@ const Messaging = () => {
     finally { setIsSendingRequest(false); }
   };
 
+  // ── View profile of active chat user ─────────────────────────
+  const handleViewProfile = () => {
+    if (activeChat?.otherUserId) navigate(`/profile/${activeChat.otherUserId}`);
+  };
+
+  // ── Clear chat ────────────────────────────────────────────────
+  const handleClearChat = async () => {
+    if (!activeChat) return;
+    const ok = window.confirm(
+      `Clear all messages with ${activeChat.userName}? This cannot be undone.`
+    );
+    if (!ok) return;
+    try {
+      await chatService.clearChat(activeChat._id);
+      setMessages([]);
+      setChats(prev => prev.map(c =>
+        c._id === activeChat._id ? { ...c, lastMessage: null } : c
+      ));
+      toast.success('Chat cleared.');
+    } catch {
+      toast.error('Failed to clear chat.');
+    }
+  };
+
+  // ── Block user ────────────────────────────────────────────────
+  const handleBlockUser = async () => {
+    if (!activeChat?.otherUserId) return;
+    const ok = window.confirm(
+      `Block ${activeChat.userName}? They won't be able to message you.`
+    );
+    if (!ok) return;
+    try {
+      await userService.blockUser(activeChat.otherUserId);
+      setBlockedChats(prev => ({ ...prev, [activeChat._id]: true }));
+      toast.success(`${activeChat.userName} has been blocked.`);
+    } catch {
+      toast.error('Failed to block user. Please try again.');
+    }
+  };
+
   // ── Filtered chat list ────────────────────────────────────────
   const filteredChats = useMemo(() =>
     chats.filter(c => c.userName.toLowerCase().includes(search.toLowerCase())),
@@ -543,9 +582,9 @@ const Messaging = () => {
                   if (isMobile) { navigate(`/profile/${activeChat.otherUserId}`); }
                   else          { setShowProfilePanel(p => !p); }
                 }}
-                onClearChat={() => {}}
-                onDeleteChat={() => {}}
-                onVoiceCall={setCallingChat}
+                onClearChat={handleClearChat}
+                onBlockUser={handleBlockUser}
+                onViewProfile={handleViewProfile}
               />
 
               {messages.length === 0 && !isLoadingMore ? (
@@ -591,13 +630,6 @@ const Messaging = () => {
 
       </div>
 
-      {/* ─── Voice Call Modal ─── */}
-      {callingChat && (
-        <ChatWindow.CallModal
-          chat={callingChat}
-          onEndCall={() => setCallingChat(null)}
-        />
-      )}
     </div>
   );
 };
