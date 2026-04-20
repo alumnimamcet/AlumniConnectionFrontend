@@ -20,8 +20,8 @@ router.put('/upload-dp', protect, profileUpload.single('profilePic'), asyncHandl
     });
   }
 
-  // Upload buffer to Cloudinary — profile_pictures folder
-  // Auto crop to square, face detection, 400x400
+  // Upload buffer to S3 — profile_pictures folder
+  // Sharp preset: square crop 400×400 WebP
   const url = await uploadToCloudinary(req.file.buffer, 'alumni/profile_pictures', 'image', {
     transformation: [{
       width: 400,
@@ -59,7 +59,7 @@ router.put('/upload-banner', protect, bannerUpload.single('bannerPic'), asyncHan
     });
   }
 
-  // Upload to Cloudinary — banners folder, wide crop 1584x396 (LinkedIn ratio)
+  // Upload to S3 — banners folder, wide crop 1584×396 (LinkedIn ratio) WebP
   const url = await uploadToCloudinary(req.file.buffer, 'alumni/banners', 'image', {
     transformation: [{
       width: 1584,

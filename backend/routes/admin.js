@@ -22,8 +22,8 @@ const {
   createNotification
 } = require('../utils/notifyHelper');
 const {
-  deleteCloudinaryImage
-} = require('../utils/cloudinaryCleanup');
+  deleteFromS3
+} = require('../utils/s3Cleanup');
 const asyncHandler = require("../middleware/asyncHandler");
 const router = express.Router();
 
@@ -975,9 +975,9 @@ router.delete('/posts/:id', protect, authorize('admin'), asyncHandler(async (req
     message: 'Post not found.'
   });
 
-  // Clean up Cloudinary image (fire-and-forget)
+  // Delete media from S3 (fire-and-forget; silently skips old Cloudinary URLs)
   if (post.media) {
-    deleteCloudinaryImage(post.media).catch(() => {});
+    deleteFromS3(post.media).catch(() => {});
   }
   await post.deleteOne();
   res.json({

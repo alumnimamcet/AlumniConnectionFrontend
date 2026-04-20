@@ -10,8 +10,8 @@ const {
   uploadToCloudinary
 } = require('../middleware/upload');
 const {
-  deleteCloudinaryImage
-} = require('../utils/cloudinaryCleanup');
+  deleteFromS3
+} = require('../utils/s3Cleanup');
 const asyncHandler = require("../middleware/asyncHandler");
 const router = express.Router();
 
@@ -80,7 +80,7 @@ router.post('/', protect, upload.single('image'), asyncHandler(async (req, res, 
       imageOptimized = result.optimized;
     }
   } else if (req.body.media) {
-    // Allow external Cloudinary URLs passed directly as a form field
+    // Allow external media URLs passed directly as a form field (e.g. during migration)
     mediaUrl = req.body.media;
   }
   if (!content?.trim() && !mediaUrl) {
@@ -372,9 +372,9 @@ router.delete('/:id', protect, asyncHandler(async (req, res, next) => {
     });
   }
 
-  // Clean up Cloudinary image (fire-and-forget)
+  // Delete media from S3 (fire-and-forget; silently skips old Cloudinary URLs)
   if (post.media) {
-    deleteCloudinaryImage(post.media).catch(() => {});
+    deleteFromS3(post.media).catch(() => {});
   }
   await post.deleteOne();
   res.json({
