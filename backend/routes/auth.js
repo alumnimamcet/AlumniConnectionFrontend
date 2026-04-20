@@ -510,7 +510,7 @@ router.put('/profile-pic', protect, profileUpload.single('profilePic'), asyncHan
     });
   }
 
-  // Stream buffer to Cloudinary — returns permanent HTTPS URL
+  // Upload to S3 via Sharp preset (400×400 WebP) — returns permanent HTTPS URL
   const imageUrl = await uploadToCloudinary(req.file.buffer, 'alumni/profile_pictures', 'image', {
     transformation: [{
       width: 400,
